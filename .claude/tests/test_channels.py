@@ -506,5 +506,70 @@ class C07_SubCapabilityHealth(unittest.TestCase):
         h = health.get("INT-TG") or {}
         self.assertEqual(h.get("status"), "AUTH_FAILED"); self.assertGreaterEqual(h.get("consecutive_failures"), 1)
 
+# ═══════════════════════ C08 human-readable identity (interaction contract) ═══════════════════════
+class C08_HumanReadableIdentity(unittest.TestCase):
+    """INTERACTION CONTRACT (workspace_policy.json -> interaction.human_readable_identity): the provider's SAFE identity metadata must
+    survive the whole chain adapter -> normalize -> channels, so Deputy never hands Gev a bare numeric id to decode. It is a
+    PRESENTATION rule only: a username or a display name never becomes confirmed identity, and it creates no identity binding."""
+    def setUp(self): env(TG_ENV); fresh()
+
+    def _rec(self, frm):
+        tr = tg_transport({"getUpdates": (200, json.dumps({"ok": True, "result": [upd(1, 100, frm["id"], "բարև", extra={"from": frm})]}))})
+        e = layer.query("INT-TG", "chat.messages", {"limit": 50}, use_cache=False, transport=tr)
+        self.assertEqual(e["status"], "OK"); self.assertEqual(len(e["records"]), 1)
+        return e["records"][0]
+
+    @covers(CI, "people_resolver", *GOV, kinds=("unit",))
+    def test_safe_metadata_survives_the_whole_chain(self):
+        r = self._rec({"id": 7, "is_bot": False, "first_name": "Piloyan", "last_name": "Sargsyan", "username": "piloyan07"})
+        self.assertEqual(r["sender_username"], "piloyan07")
+        self.assertEqual(r["sender_first_name"], "Piloyan"); self.assertEqual(r["sender_last_name"], "Sargsyan")
+        who = CH._who(r, "INT-TG")
+        self.assertEqual(who["username"], "piloyan07"); self.assertEqual(who["missing_fields"], [])
+        self.assertIn("@piloyan07", who["human"]); self.assertIn("Piloyan Sargsyan", who["human"])
+        self.assertEqual(who["reference_id"], "7")
+
+    @covers(CI, "people_resolver", *GOV, kinds=("unit", "adversarial"))
+    def test_a_missing_username_is_reported_not_invented(self):
+        r = self._rec({"id": 7, "is_bot": False, "first_name": "Piloyan"})
+        self.assertFalse(r.get("sender_username"))
+        who = CH._who(r, "INT-TG")
+        self.assertIsNone(who["username"])
+        self.assertIn("username", who["missing_fields"]); self.assertIn("username", who["provider_missing_note"])
+        self.assertNotIn("@", who["human"])                                  # nothing invented to fill the gap
+        self.assertIn("Piloyan", who["human"])
+
+    @covers(CI, *GOV, kinds=("failure", "unit"))
+    def test_with_no_human_field_the_raw_id_is_named_as_technical(self):
+        r = self._rec({"id": 7, "is_bot": False})
+        who = CH._who(r, "INT-TG")
+        self.assertIn("7", who["human"]); self.assertIn("id", who["human"])
+        self.assertIn("username", who["missing_fields"])
+
+    @covers(CI, "people_resolver", *GOV, kinds=("adversarial", "authority"))
+    def test_a_display_name_never_becomes_confirmed_identity(self):
+        card = PP.describe_external("INT-TG", "999001", username="ohanyan88", first_name="Ohanyan", display="Ohanyan")
+        self.assertIn(card["identity_status"], ("UNKNOWN", "NEEDS_CONFIRMATION"))
+        self.assertIsNone(card["confirmed_name"]); self.assertIsNone(card["person"])
+        self.assertIn("ինքնության ապացույց չէ", card["note"])
+        r = self._rec({"id": 7, "is_bot": False, "first_name": "Ohanyan", "username": "ohanyan88"})
+        self.assertNotEqual(CH._who(r, "INT-TG")["status"], "PERSON_KNOWN")
+
+    @covers(CI, "people_resolver", *GOV, kinds=("adversarial", "authority"))
+    def test_presentation_creates_no_identity_binding(self):
+        before = PP.resolve_external("INT-TG", "999002")["status"]
+        PP.describe_external("INT-TG", "999002", username="someone", first_name="Some", display="Some One")
+        after = PP.resolve_external("INT-TG", "999002")
+        self.assertEqual(after["status"], before); self.assertEqual(after["status"], "UNKNOWN"); self.assertIsNone(after["person"])
+
+    @covers(CI, *GOV, kinds=("unit",))
+    def test_technical_identifiers_are_not_damaged_by_the_presentation(self):
+        r = self._rec({"id": 7, "is_bot": False, "first_name": "Piloyan", "username": "piloyan07"})
+        self.assertEqual(str(r["sender_id"]), "7"); self.assertEqual(str(r["chat_id"]), "100")
+        self.assertTrue(r.get("record_id"))
+        who = CH._who(r, "INT-TG")
+        self.assertNotEqual(who["human"], who["reference_id"])                # a human line, not a bare id
+        self.assertTrue(any(c.isalpha() for c in who["human"]))
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -45,7 +45,9 @@ def chat_message(iid, r, updated=None):
     """Chat message (Telegram / WhatsApp) → fixed shape. Text is truncated (data minimization); attachments keep metadata only (kind, name, size, mime) — never content."""
     atts = [{"kind": _s(a.get("kind"), 20), "name": _s(a.get("name"), 120), "size": a.get("size"), "mime": _s(a.get("mime"), 80)} for a in (r.get("attachments") or []) if isinstance(a, dict)]
     return {"record_id": rid(iid, f"{r.get('chat_id')}|{r.get('message_id')}"), "source_record_id": _s(f"{r.get('chat_id')}|{r.get('message_id')}", 200), "channel": iid, "chat_id": _s(r.get("chat_id"), 80), "chat_title": _s(r.get("chat_title"), 120),
-            "sender_id": _s(r.get("sender_id"), 80), "sender_name": _s(r.get("sender_name"), 120), "text": _s(r.get("text"), 1200), "message_type": _s(r.get("message_type") or "text", 24), "reply_to": _s(r.get("reply_to"), 80) or None,
+            "sender_id": _s(r.get("sender_id"), 80), "sender_name": _s(r.get("sender_name"), 120),
+            # safe, provider-supplied human-readable identity metadata (presentation only — never identity evidence)
+            "sender_username": _s(r.get("sender_username"), 64), "sender_first_name": _s(r.get("sender_first_name"), 64), "sender_last_name": _s(r.get("sender_last_name"), 64), "text": _s(r.get("text"), 1200), "message_type": _s(r.get("message_type") or "text", 24), "reply_to": _s(r.get("reply_to"), 80) or None,
             "received": _iso(r.get("received")), "attachments": atts, "trusted": bool(r.get("trusted")), "update_id": r.get("update_id"), "source_updated_at": _iso(r.get("received")) or updated,
             # Telegram Business: source_mode BOT_CHAT (direct bot chat) vs BUSINESS (Gev's own account, selected chats). The connection
             # id is an operational secret, so only a short reference is carried; edited/deleted are evidence lifecycle, never silent overwrites.

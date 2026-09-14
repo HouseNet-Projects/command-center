@@ -89,12 +89,27 @@ def _ticket(engine, session_id):
     return t or engine.current_ticket("manual") or engine.current_ticket("")
 
 # ───────────────────────── events ─────────────────────────
+def interaction_line(engine):
+    """The user-facing interaction contract, injected into EVERY prompt so it is enforced by the runtime rather than by memory.
+    Source: .claude/policy/workspace_policy.json -> interaction (engine.interaction())."""
+    ix = engine.interaction()
+    hri = (ix.get("human_readable_identity") or {})
+    order = " -> ".join(hri.get("order") or ["READ EVIDENCE", "RESOLVE HUMAN CONTEXT", "ASK ONLY IF AMBIGUOUS"])
+    return ("὞3 ԼԵԶՈՒ · " + ix.get("user_language", "hy-AM") +
+            " — Գև-ին ուղղված ամբողջ տեսանելի հաղորդակցությունը ԱՐԵՎԵԼԱՀԱՅԵՐԵՆ է (պատասխան, status, ճշտող հարց, հաստատման քարտ, "
+            "սխալ/blocker, առաջարկ, հաշվետվություն, ամփոփում, տեսանելի դատողության ամփոփում)։ Լեզուն ՉԵՍ փոխում, եթե Գև-ը գրել է "
+            "անգլերեն/ռուսերեն/խառը։ Տեխնիկական identifier-ները մնում են բնօրինակ, բացատրությունը՝ հայերեն։\n"
+            "὆4 ՄԱՐԴԸ · " + order +
+            " — հում id-ով հարց չես տալիս, եթե safe metadata (username/first_name/last_name) կարող ես ինքդ կարդալ. "
+            "provider-ը դաշտ չի տվել՝ ուղիղ ասում ես, չես հորինում. ցուցադրվող անունը ինքնության հաստատում ՉԷ։")
+
 def on_prompt(data, engine, reg):
     prompt = data.get("user_prompt") or data.get("prompt") or ""
     if not prompt.strip() or NOTIFICATION.search(prompt[:200]): out(None, 0)      # harness notifications are not user intents
     t = engine.open_ticket(reg, prompt, session_id=data.get("session_id", ""), source="UserPromptSubmit")
     res, g = t["resolution"], t["gate"]
-    lines = [f"⛔ SKILL GATE · ticket {t['ticket_id']} · resolution {res['status']}" + (f" · chain '{res['chain_name']}'" if res.get("chain_name") else "")]
+    lines = [interaction_line(engine),
+             f"⛔ SKILL GATE · ticket {t['ticket_id']} · resolution {res['status']}" + (f" · chain '{res['chain_name']}'" if res.get("chain_name") else "")]
     if res["status"] == "RESOLVED":
         lines.append(f"   skills: {res['chain']}   gate: {g['status']}")
         for b in g["blocked"]: lines.append(f"   ✗ {b['skill']}: {b['code']} — {b['reason']}")

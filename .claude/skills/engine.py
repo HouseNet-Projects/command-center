@@ -387,6 +387,18 @@ def identity():
         except Exception: _IDENTITY = {"name": "UNKNOWN", "role": "UNKNOWN", "workspace": "UNKNOWN", "owner": "UNKNOWN"}
     return _IDENTITY
 
+_INTERACTION = None
+def interaction():
+    """Canonical INTERACTION contract - single source of truth is .claude/policy/workspace_policy.json -> interaction.
+    Fails closed: if the block cannot be read, the Armenian rule is still returned, never an empty permission to switch language."""
+    global _INTERACTION
+    if _INTERACTION is None:
+        try: _INTERACTION = json.loads(POLICY_PATH.read_text(encoding="utf-8"))["interaction"]
+        except Exception:
+            _INTERACTION = {"user_language": "hy-AM", "rule": "Every user-facing communication with the owner is in Eastern Armenian.",
+                            "degraded": "policy unreadable - the Armenian default still applies"}
+    return _INTERACTION
+
 def audit(record):
     record = dict(record); record.setdefault("ts", _now()); record.setdefault("audit_id", uuid.uuid4().hex[:16]); record.setdefault("agent", identity()["name"])
     rec = _redact(record)

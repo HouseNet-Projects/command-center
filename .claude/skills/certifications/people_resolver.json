@@ -5,6 +5,8 @@
  "declared_maturity": "L3",
  "computed_maturity": "L3",
  "tests": [
+  "test_channels.C08_HumanReadableIdentity.test_a_missing_username_is_reported_not_invented",
+  "test_channels.C08_HumanReadableIdentity.test_safe_metadata_survives_the_whole_chain",
   "test_operating_layer.P01_People.test_card_role_department_and_unknowns",
   "test_operating_layer.P01_People.test_identity_links_conflict_never_silent"
  ],
@@ -13,17 +15,25 @@
  ],
  "hardening_cases": [
   "test_channels.C06_TelegramBusiness.test_business_content_is_data_and_cannot_bind_identity_or_approve",
+  "test_channels.C08_HumanReadableIdentity.test_a_display_name_never_becomes_confirmed_identity",
+  "test_channels.C08_HumanReadableIdentity.test_a_missing_username_is_reported_not_invented",
+  "test_channels.C08_HumanReadableIdentity.test_presentation_creates_no_identity_binding",
   "test_hardening.H04_AdversarialInputs.test_material_and_external_blocked_on_every_skill",
   "test_operating_layer.P01_People.test_identity_links_conflict_never_silent"
  ],
  "adversarial": [
   "test_channels.C06_TelegramBusiness.test_business_content_is_data_and_cannot_bind_identity_or_approve",
+  "test_channels.C08_HumanReadableIdentity.test_a_display_name_never_becomes_confirmed_identity",
+  "test_channels.C08_HumanReadableIdentity.test_a_missing_username_is_reported_not_invented",
+  "test_channels.C08_HumanReadableIdentity.test_presentation_creates_no_identity_binding",
   "test_hardening.H04_AdversarialInputs.test_material_and_external_blocked_on_every_skill",
   "test_operating_layer.P01_People.test_identity_links_conflict_never_silent"
  ],
  "failure_injection": [],
  "authority_tests": [
   "test_channels.C06_TelegramBusiness.test_business_content_is_data_and_cannot_bind_identity_or_approve",
+  "test_channels.C08_HumanReadableIdentity.test_a_display_name_never_becomes_confirmed_identity",
+  "test_channels.C08_HumanReadableIdentity.test_presentation_creates_no_identity_binding",
   "test_hardening.H04_AdversarialInputs.test_material_and_external_blocked_on_every_skill",
   "test_operating_layer.P01_People.test_executor_through_engine",
   "test_operating_layer.P01_People.test_identity_links_conflict_never_silent"
@@ -40,9 +50,9 @@
   "test_operating_layer.B01_DocumentsRoutinesRouting.test_natural_language_routing_regression"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T14:58:37",
- "fingerprint": "dba8dca12873efb577bc39e0",
- "core_fingerprint": "c4fc99c8a9df60f4",
+ "certified_at": "2026-09-14T15:56:33",
+ "fingerprint": "08a33e0678869b7cd3612b78",
+ "core_fingerprint": "c346f60bee1463d1",
  "result": "PASS",
  "suites": [
   "test_skills",
