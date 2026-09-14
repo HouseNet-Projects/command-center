@@ -450,7 +450,9 @@ def _hands_env():
     for iid in ("INT-OL-CAL", "INT-OL-MAIL"):
         _A.PROVIDER_OVERRIDES[iid] = _A.FakeProvider()
     x = TMP / "Tasks-evals.xlsx"
-    if not x.exists() and (pathlib.Path(__file__).resolve().parent.parent.parent / "Tasks.xlsx").exists(): _sh.copy(pathlib.Path(__file__).resolve().parent.parent.parent / "Tasks.xlsx", x)
+    import sys as _sys; _sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "policy")); import paths as _pp
+    _real = _pp.tasks(pathlib.Path(__file__).resolve().parent.parent.parent)        # the live register, wherever the business root puts it
+    if not x.exists() and _real.exists(): _sh.copy(_real, x)
     _os.environ["COMMAND_CENTER_TASKS_XLSX"] = str(x)          # HARD GUARD: evals never write the real register
     return x
 def _run(intent, extra=None, sid="ev"):

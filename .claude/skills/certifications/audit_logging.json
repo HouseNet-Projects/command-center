@@ -1,9 +1,9 @@
 {
  "skill_id": "audit_logging",
  "skill_version": "1.2.0",
- "maturity_level": "L1",
+ "maturity_level": "L4",
  "declared_maturity": "L4",
- "computed_maturity": "L1",
+ "computed_maturity": "L4",
  "tests": [
   "test_actions.H01_Governance.test_ambiguous_pending_target_fails_closed",
   "test_actions.H01_Governance.test_approval_text_recognition",
@@ -155,6 +155,7 @@
   "test_portability.P06_CleanCloneBootstrap.test_bootstrap_restores_canonical_workspace_and_is_idempotent",
   "test_portability.P06_CleanCloneBootstrap.test_clone_used_nothing_from_the_original_workspace_but_git_and_the_key",
   "test_portability.P06_CleanCloneBootstrap.test_recovery_carries_the_latest_synced_live_register_and_the_same_static_model",
+  "test_portability.P06_CleanCloneBootstrap.test_tree_parity_and_content_integrity_after_restore",
   "test_portability.P07_PortableBinaryWorkspace.test_binary_business_artifacts_are_carried_by_git_lfs",
   "test_portability.P07_PortableBinaryWorkspace.test_every_business_file_in_the_taxonomy_is_versioned",
   "test_portability.P07_PortableBinaryWorkspace.test_the_migration_manifest_accounts_for_every_file",
@@ -611,6 +612,7 @@
   "test_portability.P03_DurableState.test_export_is_deterministic_and_import_is_idempotent",
   "test_portability.P06_CleanCloneBootstrap.test_bootstrap_restores_canonical_workspace_and_is_idempotent",
   "test_portability.P06_CleanCloneBootstrap.test_recovery_carries_the_latest_synced_live_register_and_the_same_static_model",
+  "test_portability.P06_CleanCloneBootstrap.test_tree_parity_and_content_integrity_after_restore",
   "test_portability.P07_PortableBinaryWorkspace.test_binary_business_artifacts_are_carried_by_git_lfs",
   "test_portability.P07_PortableBinaryWorkspace.test_every_business_file_in_the_taxonomy_is_versioned",
   "test_portability.P07_PortableBinaryWorkspace.test_the_migration_manifest_accounts_for_every_file",
@@ -681,7 +683,10 @@
   "eval:f_write_rejected",
   "eval:g_bitrix_deal",
   "eval:g_cancel_meeting",
+  "eval:g_close_task",
+  "eval:g_create_task_prepare",
   "eval:g_email_team",
+  "eval:g_go_but_change",
   "eval:g_go_executes_exact",
   "eval:g_local_draft",
   "eval:g_looks_good",
@@ -690,6 +695,7 @@
   "eval:g_no_asking",
   "eval:g_put_draft",
   "eval:g_remind_me",
+  "eval:g_same_task_again",
   "eval:g_send_it",
   "eval:g_tariff",
   "eval:g_timeout_retry"
@@ -702,17 +708,11 @@
   "test_operating_layer.M01_Commitments.test_executor_answers",
   "test_skills.T02b_DomainBoundary.test_system_intents_route_no_business_skill"
  ],
- "failed_tests": [
-  "test_portability.P06_CleanCloneBootstrap.test_tree_parity_and_content_integrity_after_restore",
-  "eval:g_create_task_prepare",
-  "eval:g_close_task",
-  "eval:g_same_task_again",
-  "eval:g_go_but_change"
- ],
- "certified_at": "2026-09-14T19:40:26",
+ "failed_tests": [],
+ "certified_at": "2026-09-14T20:14:36",
  "fingerprint": "dcca7c34c8faf01df9b72842",
  "core_fingerprint": "0af15296acbfd2ed",
- "result": "FAIL",
+ "result": "PASS",
  "suites": [
   "test_skills",
   "test_store",

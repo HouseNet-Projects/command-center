@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-14T19:40:44",
+ "generated_at": "2026-09-14T20:15:00",
  "algorithm": "sha256",
  "files": {
   ".claude/business/bm_company.py": {
@@ -323,8 +323,8 @@
    "size": 3606
   },
   ".claude/tests/evals.py": {
-   "sha256": "7ab8b9d8a45a73636699973f218dfa71cecfe4b247abe24c966ff60f938b929f",
-   "size": 101617
+   "sha256": "2a55189dccc12726bb36cb3d405f67efa262a91559ebc7380431112d4596c762",
+   "size": 101760
   },
   ".claude/tests/test_actions.py": {
    "sha256": "5f89a148d949805f93f1f073254cde118fde1fc8825cf77b7a222534cb9ca279",

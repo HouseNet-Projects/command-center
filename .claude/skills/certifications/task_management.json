@@ -108,7 +108,7 @@
   "test_skills.T02_Router.test_dependency_order"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T19:40:26",
+ "certified_at": "2026-09-14T20:14:36",
  "fingerprint": "30fbdb1c91186ec45a0531d5",
  "core_fingerprint": "0af15296acbfd2ed",
  "result": "PASS",
