@@ -101,6 +101,37 @@ def resolve_external(channel, external_id, display=None):
     cands = [{"person": p["token"], "name": p["name"], "confidence": 0.3, "method": "NAME_MATCH"} for p in find_person(display or "")] if display else []
     return {"status": "UNKNOWN" if not cands else "NEEDS_CONFIRMATION", "person": None, "candidates": cands, "reason": "no identity link for this external id" + (" — display name matches a known person (candidate only)" if cands else ""), "link_id": lid}
 
+def describe_external(channel, external_id, *, username=None, first_name=None, last_name=None, display=None):
+    """HUMAN-READABLE presentation of an external sender (workspace_policy.json -> interaction.human_readable_identity).
+    Deputy must never hand Gev a bare numeric id to decode: it resolves the best available safe context FIRST and asks only
+    if still ambiguous. This is presentation ONLY — a username or a name is never identity evidence, and binding stays
+    fail-closed in resolve_external()."""
+    res = resolve_external(channel, external_id, display or first_name or username)
+    parts, missing = [], []
+    if username: parts.append("@" + str(username).lstrip("@"))
+    else: missing.append("username")
+    full = " ".join(x for x in (first_name, last_name) if x)
+    if full: parts.append(full)
+    if not last_name: missing.append("last_name")
+    if display and display not in parts: parts.append(f"display name «{display}»")
+    known = res.get("name") if res["status"] == "PERSON_KNOWN" else None
+    if known: parts.insert(0, known)
+    return {"channel": channel, "external_id": str(external_id), "identity_status": res["status"], "person": res.get("person"),
+            "confirmed_name": known, "username": (str(username).lstrip("@") if username else None),
+            "first_name": first_name, "last_name": last_name, "display_name": display,
+            "missing_fields": missing, "candidates": res.get("candidates", []),
+            "human": " · ".join(parts) if parts else f"(մատակարարը մարդկային ոչ մի դաշտ չի տվել, միայն տեխնիկական id {external_id})",
+            "reference_id": str(external_id),
+            "note": ("հաստատված ինքնություն" if known else
+                     "ցուցադրվող անունը ինքնության ապացույց չէ — հաստատումը Գև-ինն է"),
+            "provider_missing_note": ("մատակարարը չի տվել՝ " + ", ".join(missing)) if missing else None}
+
+def describe_chat_record(rec):
+    """Same presentation, taken straight from a normalized chat record."""
+    return describe_external(rec.get("channel"), rec.get("sender_id"), username=rec.get("sender_username"),
+                             first_name=rec.get("sender_first_name"), last_name=rec.get("sender_last_name"),
+                             display=rec.get("sender_name"))
+
 def identities_of(person_token):
     return [{k: r.get(k) for k in ("channel", "external_display", "status", "method", "confidence", "confirmed_at")} for r in links() if r.get("person") == person_token]
 

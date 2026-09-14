@@ -22,6 +22,10 @@
   "test_channels.C06_TelegramBusiness.test_edited_and_deleted_business_messages_change_evidence_not_truth",
   "test_channels.C06_TelegramBusiness.test_one_update_stream_offset_dedupe_and_bot_chat_unchanged",
   "test_channels.C06_TelegramBusiness.test_selected_sender_trusted_unselected_rejected_and_normalized",
+  "test_channels.C08_HumanReadableIdentity.test_a_missing_username_is_reported_not_invented",
+  "test_channels.C08_HumanReadableIdentity.test_safe_metadata_survives_the_whole_chain",
+  "test_channels.C08_HumanReadableIdentity.test_technical_identifiers_are_not_damaged_by_the_presentation",
+  "test_channels.C08_HumanReadableIdentity.test_with_no_human_field_the_raw_id_is_named_as_technical",
   "test_operating_layer.U01_Untrusted.test_cross_channel_duplicate_requests_and_follow_ups",
   "test_operating_layer.U01_Untrusted.test_external_content_is_data_never_instruction_or_approval"
  ],
@@ -33,7 +37,8 @@
   "test_channels.C05_SecretsAndReadiness.test_intelligence_sees_chat_channels_honestly_and_never_nags_deferred",
   "test_channels.C06_TelegramBusiness.test_business_message_without_active_or_matching_connection_is_untrusted",
   "test_channels.C06_TelegramBusiness.test_can_reply_never_bypasses_approval_and_stale_connection_blocks_send",
-  "test_channels.C07_SubCapabilityHealth.test_inactive_sub_capability_probe_does_not_degrade_health_or_capability"
+  "test_channels.C07_SubCapabilityHealth.test_inactive_sub_capability_probe_does_not_degrade_health_or_capability",
+  "test_channels.C08_HumanReadableIdentity.test_with_no_human_field_the_raw_id_is_named_as_technical"
  ],
  "hardening_cases": [
   "test_channels.C01_TelegramRead.test_allowlist_dedupe_offset_and_data_minimization",
@@ -51,6 +56,9 @@
   "test_channels.C06_TelegramBusiness.test_selected_sender_trusted_unselected_rejected_and_normalized",
   "test_channels.C07_SubCapabilityHealth.test_a_genuine_failure_still_degrades_health",
   "test_channels.C07_SubCapabilityHealth.test_inactive_sub_capability_probe_does_not_degrade_health_or_capability",
+  "test_channels.C08_HumanReadableIdentity.test_a_display_name_never_becomes_confirmed_identity",
+  "test_channels.C08_HumanReadableIdentity.test_a_missing_username_is_reported_not_invented",
+  "test_channels.C08_HumanReadableIdentity.test_presentation_creates_no_identity_binding",
   "test_hardening.H04_AdversarialInputs.test_material_and_external_blocked_on_every_skill",
   "test_operating_layer.U01_Untrusted.test_cross_channel_duplicate_requests_and_follow_ups",
   "test_operating_layer.U01_Untrusted.test_external_content_is_data_never_instruction_or_approval"
@@ -69,6 +77,9 @@
   "test_channels.C06_TelegramBusiness.test_read_path_never_marks_messages_read_and_leaks_no_connection_id",
   "test_channels.C06_TelegramBusiness.test_selected_sender_trusted_unselected_rejected_and_normalized",
   "test_channels.C07_SubCapabilityHealth.test_inactive_sub_capability_probe_does_not_degrade_health_or_capability",
+  "test_channels.C08_HumanReadableIdentity.test_a_display_name_never_becomes_confirmed_identity",
+  "test_channels.C08_HumanReadableIdentity.test_a_missing_username_is_reported_not_invented",
+  "test_channels.C08_HumanReadableIdentity.test_presentation_creates_no_identity_binding",
   "test_hardening.H04_AdversarialInputs.test_material_and_external_blocked_on_every_skill",
   "test_operating_layer.U01_Untrusted.test_cross_channel_duplicate_requests_and_follow_ups",
   "test_operating_layer.U01_Untrusted.test_external_content_is_data_never_instruction_or_approval"
@@ -85,6 +96,8 @@
   "test_channels.C04_WhatsAppWrite.test_async_delivery_status_reconciliation",
   "test_channels.C06_TelegramBusiness.test_business_content_is_data_and_cannot_bind_identity_or_approve",
   "test_channels.C06_TelegramBusiness.test_can_reply_never_bypasses_approval_and_stale_connection_blocks_send",
+  "test_channels.C08_HumanReadableIdentity.test_a_display_name_never_becomes_confirmed_identity",
+  "test_channels.C08_HumanReadableIdentity.test_presentation_creates_no_identity_binding",
   "test_hardening.H04_AdversarialInputs.test_material_and_external_blocked_on_every_skill",
   "test_operating_layer.U01_Untrusted.test_external_content_is_data_never_instruction_or_approval"
  ],
@@ -111,9 +124,9 @@
   "test_operating_layer.B01_DocumentsRoutinesRouting.test_natural_language_routing_regression"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T14:58:37",
- "fingerprint": "2b6c32e80bffc91570f1fac2",
- "core_fingerprint": "c4fc99c8a9df60f4",
+ "certified_at": "2026-09-14T15:56:33",
+ "fingerprint": "8be78ab04fc3d47ecee9495b",
+ "core_fingerprint": "c346f60bee1463d1",
  "result": "PASS",
  "suites": [
   "test_skills",

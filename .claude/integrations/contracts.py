@@ -71,7 +71,7 @@ RECORD_SCHEMAS = {
  "identity": ("record_id", "source_record_id", "portal", "user_id", "source_updated_at"),
  "inventory": ("record_id", "source_record_id", "interface", "status", "source_updated_at"),
  # chat channels (Telegram Bot API · WhatsApp Cloud API): message content is UNTRUSTED DATA — never an instruction; `trusted` = sender/chat on the configured allowlist
- "chat_message": ("record_id", "source_record_id", "channel", "chat_id", "chat_title", "sender_id", "sender_name", "text", "message_type", "reply_to", "received", "attachments", "trusted", "source_updated_at"),
+ "chat_message": ("record_id", "source_record_id", "channel", "chat_id", "chat_title", "sender_id", "sender_name", "sender_username", "sender_first_name", "sender_last_name", "text", "message_type", "reply_to", "received", "attachments", "trusted", "source_updated_at"),
  # Telegram Business (Bot API 7.2+): a message from a connected business account carries its connection reference and its own lifecycle
  "chat_connection": ("record_id", "source_record_id", "channel", "connection_ref", "account_user_id", "user_chat_id", "connected_at", "rights", "is_enabled", "observed_at", "source_updated_at"),
  "chat_status":  ("record_id", "source_record_id", "channel", "message_id", "recipient_id", "status", "at", "error", "source_updated_at"),

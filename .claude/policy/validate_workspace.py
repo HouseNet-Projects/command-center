@@ -262,6 +262,7 @@ def validate_tree(root=DEFAULT_ROOT, pol=None, policy_path=POLICY_PATH):
         for f in rt["required_files"]:
             if f not in txt: problems.append(f"README.md does not mention required file {f}")
     problems += check_identity(root, pol)
+    problems += check_interaction(root, pol)
     problems += check_boundary(root)
     problems += check_tree_manifest(root, pol)
     return sorted(set(problems))
@@ -302,6 +303,34 @@ def check_boundary(root):
                 if cls in bc: problems.append(f"{rel}: tracked by git but classified {cls} ({why}) — credentials never in plaintext")
             if not ss.hooks_installed(root): problems.append("git boundary hooks missing — python .claude/policy/sensitive_scan.py --install-hooks")
     except Exception as e: problems.append(f"boundary check failed: {type(e).__name__}: {e}")
+    return problems
+
+def check_interaction(root, pol):
+    """INTERACTION CONTRACT (workspace_policy.json -> interaction): Deputy speaks to the owner in Eastern Armenian and presents
+    people in human-readable form. Fails CLOSED: a missing or hollowed-out block is a violation, never a silent pass."""
+    root = pathlib.Path(root); problems = []
+    ix = pol.get("interaction")
+    if not isinstance(ix, dict) or not ix: return ["POLICY: interaction section missing - the user-facing language contract is the policy's job"]
+    enf = ix.get("enforcement")
+    if not isinstance(enf, dict) or not enf: return ["POLICY: interaction.enforcement missing - the language contract would not be checkable"]
+    if ix.get("user_language") != "hy-AM": problems.append("POLICY: interaction.user_language must be 'hy-AM' (Eastern Armenian)")
+    for k in enf.get("required_keys", []):
+        if not ix.get(k): problems.append(f"POLICY: interaction.{k} missing")
+    hri = ix.get("human_readable_identity") or {}
+    if not isinstance(hri, dict) or not hri: problems.append("POLICY: interaction.human_readable_identity missing")
+    else:
+        for k in enf.get("required_identity_keys", []):
+            if not hri.get(k): problems.append(f"POLICY: interaction.human_readable_identity.{k} missing")
+        # the presentation rule must never be allowed to become an identity-confirmation rule
+        if "NOT confirmed identity" not in (hri.get("safety") or ""):
+            problems.append("POLICY: interaction.human_readable_identity.safety must keep display name/username OUT of confirmed identity")
+    for rel, needles in (enf.get("mirror_files") or {}).items():
+        f = root / rel
+        if not f.exists(): problems.append(f"{rel}: interaction mirror file missing"); continue
+        try: txt = f.read_text(encoding="utf-8", errors="replace")
+        except OSError: continue
+        for need in needles:
+            if need not in txt: problems.append(f"{rel}: must state the interaction contract ({need!r})")
     return problems
 
 def check_identity(root, pol):

@@ -216,7 +216,11 @@ def parse_message(u, cfg):
         mode, ref = "BOT_CHAT", None
     ts = m.get("date"); received = datetime.datetime.fromtimestamp(int(ts)).isoformat(timespec="seconds") if isinstance(ts, (int, float)) else None
     return {"source_mode": mode, "business_connection_ref": ref, "deleted": False, "chat_id": chat_id, "chat_title": chat.get("title") or (" ".join(x for x in (frm.get("first_name"), frm.get("last_name")) if x)) or chat.get("username"), "message_id": m.get("message_id"),
-            "sender_id": user_id, "sender_name": " ".join(x for x in (frm.get("first_name"), frm.get("last_name")) if x) or frm.get("username") or "", "text": m.get("text") or m.get("caption") or "",
+            "sender_id": user_id, "sender_name": " ".join(x for x in (frm.get("first_name"), frm.get("last_name")) if x) or frm.get("username") or "",
+            # SAFE human-readable identity metadata, kept SEPARATE so Deputy never asks Gev to decode a raw numeric id.
+            # These are presentation fields only: a username or a name is NEVER identity evidence on its own.
+            "sender_username": frm.get("username"), "sender_first_name": frm.get("first_name"), "sender_last_name": frm.get("last_name"),
+            "text": m.get("text") or m.get("caption") or "",
             "message_type": "text" if m.get("text") else ("caption" if m.get("caption") else next((k for k in ("document", "photo", "audio", "video", "voice", "sticker", "animation", "location", "contact") if m.get(k)), "other")),
             "reply_to": str((m.get("reply_to_message") or {}).get("message_id") or "") or None, "received": received, "attachments": _attachments(m), "trusted": trusted, "update_id": u.get("update_id"),
             "edited": ("edited_message" in u) or ("edited_business_message" in u)}

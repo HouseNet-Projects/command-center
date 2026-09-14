@@ -12,10 +12,18 @@ from testing import covers
 POLICY = json.loads((POLICY_DIR / "workspace_policy.json").read_text(encoding="utf-8"))
 GUARD = ROOT / ".claude" / "hooks" / "workspace_guard.py"
 
+def contract_line(pol=None):
+    """Everything a mirrored file must state to satisfy the policy — identity tokens AND the interaction contract.
+    Derived from the policy, never hard-coded, so a new mandated mention cannot silently bypass the synthetic trees."""
+    pol = pol or POLICY
+    toks = {t for ts in pol["identity_enforcement"]["must_mention"].values() for t in ts}
+    toks |= {t for ts in (pol.get("interaction", {}).get("enforcement", {}).get("mirror_files") or {}).values() for t in ts}
+    return " ".join(sorted(toks)) + "\n"
+
 def clean_tree():
     """Minimal tree that satisfies the contract (files are empty placeholders)."""
     d = pathlib.Path(tempfile.mkdtemp(prefix="ws_")); pol = POLICY
-    ident_line = " ".join(sorted({tok for toks in pol["identity_enforcement"]["must_mention"].values() for tok in toks})) + "\n"
+    ident_line = contract_line(pol)
     for f in pol["root"]["required_files"]: (d / f).write_text("# x\n" + ident_line, encoding="utf-8")
     (d / "README.md").write_text("\n".join(pol["root"]["required_dirs"] + pol["root"]["required_files"]) + "\n" + ident_line, encoding="utf-8")
     for dd in pol["root"]["required_dirs"]: (d / dd).mkdir(parents=True, exist_ok=True)
@@ -85,7 +93,7 @@ class W01_Tree(unittest.TestCase):
         (d / "03_Completed/Tasks-copy-2026-09-10.xlsx").write_bytes(b""); self.assertTrue(any("Tasks-copy" in p for p in problems(d)))
     def test_technical_reserved_filenames_allowed(self):
         d = clean_tree()
-        for f in ("CLAUDE.md", "README.md", ".gitignore", ".gitattributes", "desktop.ini"): (d / f).write_text("Deputy Command-center\n" if f != "README.md" else (d / "README.md").read_text(encoding="utf-8"), encoding="utf-8")
+        for f in ("CLAUDE.md", "README.md", ".gitignore", ".gitattributes", "desktop.ini"): (d / f).write_text(contract_line() if f != "README.md" else (d / "README.md").read_text(encoding="utf-8"), encoding="utf-8")
         (d / ".claude/settings.json").write_text("{}", encoding="utf-8"); self.assertEqual(problems(d), [])
     def test_python_module_naming_exception_works(self):
         d = clean_tree(); (d / ".claude/tools/build_task_workbook.py").write_text("", encoding="utf-8"); self.assertEqual(problems(d), [])
@@ -178,6 +186,71 @@ class W02_Guard(unittest.TestCase):
         p = subprocess.run([sys.executable, str(GUARD), "PreToolUse"], input=json.dumps({"hook_event_name": "PreToolUse", "tool_name": "Write", "tool_input": {"file_path": str(d / "Journal.md")}}),
                            capture_output=True, text=True, encoding="utf-8", env={**os.environ, "WORKSPACE_ROOT": str(d), "WORKSPACE_POLICY": str(bad)})
         self.assertIn('"deny"', p.stdout)
+
+class W04_Interaction(unittest.TestCase):
+    """THE INTERACTION CONTRACT — Deputy speaks to Gev in Eastern Armenian and presents people in human-readable form.
+    It lives in the SAME policy owner as identity (no second policy system), it fails closed, and the runtime re-asserts it on
+    every prompt instead of relying on the agent remembering it."""
+    @classmethod
+    def setUpClass(cls):
+        for d in ("skills", "hooks"): sys.path.insert(0, str(ROOT / ".claude" / d))
+        import engine, gate; cls.engine, cls.gate = engine, gate
+
+    def test_policy_is_the_single_interaction_source(self):
+        ix = POLICY["interaction"]
+        self.assertEqual(ix["user_language"], "hy-AM")
+        self.assertIn("Eastern Armenian", ix["rule"])
+        for k in ("approval cards", "error and blocker explanations", "user-visible reasoning summaries", "status updates"):
+            self.assertIn(k, ix["applies_to"], k)
+        self.assertEqual(self.engine.interaction()["user_language"], "hy-AM")
+
+    def test_policy_without_interaction_fails_closed(self):
+        p2 = copy.deepcopy(POLICY); del p2["interaction"]
+        self.assertTrue(any("interaction section missing" in x for x in vw.check_interaction(clean_tree(), p2)))
+        p3 = copy.deepcopy(POLICY); del p3["interaction"]["enforcement"]
+        self.assertTrue(any("enforcement missing" in x for x in vw.check_interaction(clean_tree(), p3)))
+
+    def test_language_downgrade_is_a_violation(self):
+        for bad in ("en", "ru", "", None):
+            p2 = copy.deepcopy(POLICY); p2["interaction"]["user_language"] = bad
+            self.assertTrue(any("user_language" in x for x in vw.check_interaction(clean_tree(), p2)), bad)
+        p3 = copy.deepcopy(POLICY); p3["interaction"]["rule"] = ""
+        self.assertTrue(any("interaction.rule missing" in x for x in vw.check_interaction(clean_tree(), p3)))
+
+    def test_human_readable_identity_rule_cannot_be_hollowed_out(self):
+        p2 = copy.deepcopy(POLICY); del p2["interaction"]["human_readable_identity"]
+        self.assertTrue(any("human_readable_identity" in x for x in vw.check_interaction(clean_tree(), p2)))
+        for k in ("absent_field_rule", "order"):
+            p3 = copy.deepcopy(POLICY); p3["interaction"]["human_readable_identity"][k] = ""
+            self.assertTrue(any(k in x for x in vw.check_interaction(clean_tree(), p3)), k)
+
+    def test_presentation_rule_may_never_become_an_identity_confirmation_rule(self):
+        self.assertIn("NOT confirmed identity", POLICY["interaction"]["human_readable_identity"]["safety"])
+        p2 = copy.deepcopy(POLICY); p2["interaction"]["human_readable_identity"]["safety"] = "a display name is good enough"
+        self.assertTrue(any("OUT of confirmed identity" in x for x in vw.check_interaction(clean_tree(), p2)))
+
+    def test_mirror_docs_must_state_the_contract(self):
+        d = clean_tree()
+        (d / "CLAUDE.md").write_text("Deputy · Command-center\n", encoding="utf-8")
+        self.assertTrue(any("CLAUDE.md" in x and "interaction contract" in x for x in vw.check_interaction(d, POLICY)))
+        self.assertEqual(vw.check_interaction(ROOT, POLICY), [])
+
+    def test_runtime_reasserts_the_contract_on_every_prompt(self):
+        """Enforced by the runtime, not by memory: the gate injects the contract into the context of EVERY prompt."""
+        line = self.gate.interaction_line(self.engine)
+        for needle in ("ԱՐԵՎԵԼԱՀԱՅԵՐԵՆ", "hy-AM", "blocker", "հաստատման քարտ", "ՉԵՍ փոխում", "ինքնության հաստատում ՉԷ"):
+            self.assertIn(needle, line, needle)
+        self.assertIn("interaction_line(engine)", (ROOT / ".claude/hooks/gate.py").read_text(encoding="utf-8"))
+
+    def test_contract_does_not_weaken_authority_or_security(self):
+        """A UX rule must never become a permission: it grants nothing and moves no approval/authority boundary."""
+        blob = json.dumps(POLICY["interaction"], ensure_ascii=False).lower()
+        for forbidden in ("autonomous", "bypass", "credential", "token", "without gev"):
+            self.assertNotIn(forbidden, blob, forbidden)
+        self.assertTrue(POLICY.get("authority"))
+        ar = json.loads((ROOT / ".claude/policy/approval_rule.json").read_text(encoding="utf-8"))
+        self.assertEqual(ar["autonomous_external_write_authority"], "NONE")
+        self.assertEqual(vw.check_identity(ROOT, POLICY), [])
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

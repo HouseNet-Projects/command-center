@@ -20,8 +20,16 @@ def read_channel(iid, *, limit=100, use_cache=True):
     except Exception as e: return {"status": "ERROR", "integration_id": iid, "code": "UNAVAILABLE", "reason": f"{type(e).__name__}: {e}", "records": []}
 
 def _who(rec, iid):
+    """Identity + HUMAN-READABLE presentation (workspace_policy.json -> interaction.human_readable_identity): Gev must never be handed a
+    bare numeric id to decode, so the safe provider metadata travels with the sender. Presentation only - the binding status below is
+    still whatever resolve_external() says, and a username or display name never becomes confirmation."""
     ident = people.resolve_external(iid, rec.get("sender_id"), rec.get("sender_name"))
-    return {"status": ident["status"], "person": ident.get("person"), "name": ident.get("name") or rec.get("sender_name") or rec.get("sender_id"), "candidates": ident.get("candidates", [])}
+    card = people.describe_chat_record(dict(rec, channel=iid))
+    return {"status": ident["status"], "person": ident.get("person"), "name": ident.get("name") or rec.get("sender_name") or rec.get("sender_id"),
+            "candidates": ident.get("candidates", []),
+            "username": card["username"], "first_name": card["first_name"], "last_name": card["last_name"],
+            "display_name": card["display_name"], "human": card["human"], "reference_id": card["reference_id"],
+            "missing_fields": card["missing_fields"], "provider_missing_note": card["provider_missing_note"]}
 
 def normalize_chat(env, iid, today, head_names=("Գև", "Gev")):
     """Chat records → evidence items with untrusted marker, identity, request/promise/escalation classification."""

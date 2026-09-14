@@ -901,5 +901,79 @@
         "UNCLASSIFIED": "unknown path changed — fail closed, nothing is synced"
       }
     }
+  },
+  "interaction": {
+    "user_language": "hy-AM",
+    "user_language_name": "Eastern Armenian",
+    "rule": "Every user-facing communication with the owner is in Eastern Armenian, regardless of the language the owner writes in (Armenian, English, Russian, mixed or technical).",
+    "applies_to": [
+      "answers",
+      "status updates",
+      "clarifying questions",
+      "approval cards",
+      "error and blocker explanations",
+      "recommendations",
+      "reports",
+      "summaries",
+      "user-visible reasoning summaries",
+      "human presentation of tool and action results"
+    ],
+    "never_switch_because": "the owner wrote in another language",
+    "preserve_verbatim": [
+      "technical identifiers",
+      "code symbols",
+      "API field names",
+      "filenames",
+      "commit SHAs",
+      "error codes",
+      "established English technical terms"
+    ],
+    "preserve_note": "These may keep their original form, but their explanation is in Armenian.",
+    "hidden_reasoning": "Internal hidden model reasoning is not a user-visible interface and is not a checkable contract; any reasoning SUMMARY shown to the owner is Armenian.",
+    "human_readable_identity": {
+      "rule": "Never ask the owner to decode a raw system identifier. Resolve the best available human-readable identity from evidence first, and ask only if it is still ambiguous.",
+      "order": [
+        "READ AVAILABLE EVIDENCE",
+        "RESOLVE SAFE HUMAN CONTEXT",
+        "ONLY THEN ASK GEV IF STILL AMBIGUOUS"
+      ],
+      "present_fields": [
+        "username",
+        "first_name",
+        "last_name",
+        "confirmed person name",
+        "known role",
+        "display name (explicitly marked as not identity evidence)"
+      ],
+      "raw_id_use": "only as a technical reference shown alongside human-readable context",
+      "absent_field_rule": "If the provider did not supply a field (for example username), say so plainly - never invent it.",
+      "safety": "Presentation rule only. It never confirms identity: display name, username or similarity is NOT confirmed identity, and identity binding stays fail-closed and provenance-based."
+    },
+    "note": "SINGLE SOURCE OF TRUTH for how Deputy talks to the owner. CLAUDE.md and the docs mirror this block; validate_workspace.check_interaction() enforces it. This is an interaction contract and changes no authority, approval or security boundary.",
+    "enforcement": {
+      "required_keys": [
+        "user_language",
+        "rule",
+        "applies_to",
+        "preserve_verbatim",
+        "human_readable_identity"
+      ],
+      "required_identity_keys": [
+        "rule",
+        "order",
+        "absent_field_rule",
+        "safety"
+      ],
+      "mirror_files": {
+        "CLAUDE.md": [
+          "արևելահայերեն"
+        ],
+        ".claude/docs/Role.md": [
+          "արևելահայերեն"
+        ]
+      },
+      "runtime_context_file": ".claude/hooks/gate.py",
+      "note": "validate_workspace.check_interaction() enforces this: the block must exist (fail closed), carry these keys, and the mirror files must state the contract in Armenian."
+    }
   }
 }
