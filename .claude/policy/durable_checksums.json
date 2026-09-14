@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-14T12:48:51",
+ "generated_at": "2026-09-14T13:22:49",
  "algorithm": "sha256",
  "files": {
   ".claude/business/bm_company.py": {
@@ -63,8 +63,8 @@
    "size": 13942
   },
   ".claude/docs/Activation-inputs.md": {
-   "sha256": "90819317f9b9bf04b254ab77e93b3cc8b932bbaf4864f2b92f3d9480550e351f",
-   "size": 6484
+   "sha256": "c26624b6ad9331adbd946cce637ad72842b7173f76b6f9d20940d0bfb5f36377",
+   "size": 8960
   },
   ".claude/docs/Job-description.md": {
    "sha256": "6c40ad24a4fc0075a01f55815ca4ab827032c0729f2148ce51a15de51ed67cc8",
@@ -119,12 +119,12 @@
    "size": 8651
   },
   ".claude/integrations/adapter_telegram.py": {
-   "sha256": "77f5000d4c4c620f9a3b737e23166aac4872d4a9793adac81490f538fd36df3b",
-   "size": 12250
+   "sha256": "358767878e5aa3bdcc73fd0e1386e8d63ae3059b01fda997145f4eddd7d03d74",
+   "size": 24486
   },
   ".claude/integrations/adapter_telegram_write.py": {
-   "sha256": "e39b1673d6a1ef04bb2b853799b55682933dcdcfcd7fe615ed6ca0f1302285e0",
-   "size": 5162
+   "sha256": "639ada583e3cc1995ac175aebb75e0f65e97c75aff1f38163babd03c1b3e2f75",
+   "size": 7716
   },
   ".claude/integrations/adapter_whatsapp.py": {
    "sha256": "d8e5671a43074a2d56332ee537f1518878cee92fe7648a9040713ae576c94fe6",
@@ -135,16 +135,16 @@
    "size": 6823
   },
   ".claude/integrations/capabilities.py": {
-   "sha256": "23edbec543d2a2b01dbfee5d142fdd7e53af554776cb65b4fcb57522f240e06a",
-   "size": 11851
+   "sha256": "ecc64905da3d334564c56e026e64dbf10bea94d0ddc525d256bba21bec9b70ec",
+   "size": 12035
   },
   ".claude/integrations/certify_integrations.py": {
    "sha256": "55c133101e1863c197482b9e116c0b2c8fa91dc0e53f9be87d619a5281f8cb2b",
    "size": 13368
   },
   ".claude/integrations/contracts.py": {
-   "sha256": "9e132126cbaddbdee791252f62914b5c63e65ba6155b6cc1b16dd1f99163d1b1",
-   "size": 11829
+   "sha256": "7c806b0540b9a5a14b3de82b7e71163f73c197e2c445697874447585003fa719",
+   "size": 12160
   },
   ".claude/integrations/health.py": {
    "sha256": "f6ff09cc0dc3135cdacebcbeab2f700912d0aceaf2c601408c3872de597f4907",
@@ -163,8 +163,8 @@
    "size": 21053
   },
   ".claude/integrations/normalize.py": {
-   "sha256": "2326fcd6172ecfe4de4fbd5aeee08d4ecaa88d8507c1764d14f66cdc8b4a7265",
-   "size": 8573
+   "sha256": "b4d35b3dc7328cd87bcde0b595aea42c69c4ec0dbff3dc46dcd204bdab99d435",
+   "size": 9856
   },
   ".claude/integrations/outlook_read.ps1": {
    "sha256": "8e599a14b7877dc5365587053112e1f7e3318e79c3d6b14ff9397507b5d1246c",
@@ -183,8 +183,8 @@
    "size": 15601
   },
   ".claude/integrations/registry.py": {
-   "sha256": "6cd1ea7d3144572de640f968722e5ee35fca741392ad1d0c7d03cec2d9612157",
-   "size": 20754
+   "sha256": "2a636180659597f4744448ce4931ac1cd6336748b0f8056b256395ae01649fe9",
+   "size": 21507
   },
   ".claude/integrations/whatsapp_webhook.py": {
    "sha256": "45d7f8b41decea43ddd378fc518d545ae6af64526586a8596b4c59e6a1f914f8",
@@ -263,12 +263,12 @@
    "size": 9878
   },
   ".claude/skills/channels.py": {
-   "sha256": "c6c5eb9593d0a676b24c0554a40488ef79a4c0340c1d97edf06b090dffd3913d",
-   "size": 9305
+   "sha256": "479cf657bbf344b3b98cccb54901d1dbee9dcee59b23b84bf2355f67963af981",
+   "size": 9983
   },
   ".claude/skills/commitments.py": {
-   "sha256": "ef5e4311212202d0f095cef1865f52b7e1831b6017fd7d00cd9f98e76e3e721e",
-   "size": 11316
+   "sha256": "fe004c8d844740de2860cf9be6efa26c73ce4790861e7aafa52fb97425bc586d",
+   "size": 13817
   },
   ".claude/skills/decisions.py": {
    "sha256": "413c8c564f0538ddff1dc1fcb0d1e5ad55e055e61d810407fa15c1f59c09cc40",
@@ -331,8 +331,8 @@
    "size": 33645
   },
   ".claude/tests/test_channels.py": {
-   "sha256": "577be2535bb2d62f50763d0037db8182de4a7ee1d8fdbb5cf6072d9f6db509eb",
-   "size": 37646
+   "sha256": "465a5cde1e87919609af7a6dd4004113c848baaa8213c45c4d810a3585a80dc1",
+   "size": 49697
   },
   ".claude/tests/test_enforcement.py": {
    "sha256": "953db2fac18f364e25d2e9b9f3624f86799d71acb39cb3f50df78ff06bf97c81",
@@ -591,16 +591,16 @@
    "size": 2541
   },
   "CLAUDE.md": {
-   "sha256": "67d31c6c26c617400dbe8c3b463893f715f200bc6ff6e6cad424b4a286280b41",
-   "size": 23429
+   "sha256": "02e9ac53e5a0fa602153a1fa21291e435a01f58460e3a0ccbb3c437fea657ee0",
+   "size": 23838
   },
   "Journal.md": {
-   "sha256": "4d865a55d259574cb61e8880c56ac6aa26ece47d8b279e88b3815c483e232afd",
-   "size": 39581
+   "sha256": "8b1df1366722fde391be6a4e932c361c4f2377f63b0d4c873969746ca94dc69e",
+   "size": 41345
   },
   "README.md": {
-   "sha256": "abc2b3ce86a771e81ae68550364229adb14c4e76235a26d5016d09900ecb4fd3",
-   "size": 32369
+   "sha256": "2166964df750d6a0656b4600528e59029a0bee6a57dac64d1d46582f054b5223",
+   "size": 33392
   },
   "Tasks.xlsx": {
    "sha256": "bb33a6d71f1e36368ee6786044aef242dfbb7c46184c172971b75307a6c50d00",
