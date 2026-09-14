@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-14T19:16:43",
+ "generated_at": "2026-09-14T19:40:44",
  "algorithm": "sha256",
  "files": {
   ".claude/business/bm_company.py": {
@@ -35,8 +35,8 @@
    "size": 7711
   },
   ".claude/business/build_business_model.py": {
-   "sha256": "6f0792946e9bc3ecb8d798f6415c7786c94629f9bd48cb3f3153b3014b37a408",
-   "size": 35371
+   "sha256": "b1c028171590aa1db5343fbd117af41b73c034415e8ecdade6a105f69957d688",
+   "size": 35413
   },
   ".claude/business/certify_business.py": {
    "sha256": "82743d98c81c7f6690114045a9fb3340c2315cde6c3ae31c9a3458befec20081",
@@ -203,8 +203,8 @@
    "size": 4036
   },
   ".claude/policy/scope.py": {
-   "sha256": "bb6f873e00dd0c4699e81bdacdf93f05001390c1509ba941b6ee37a0b804e2ab",
-   "size": 16913
+   "sha256": "fc7a2d32e74910df8bdc161f1501b81e39dfd11b05aa9ae741921086a6341494",
+   "size": 17650
   },
   ".claude/policy/sensitive_scan.py": {
    "sha256": "d7116d64d9187132c38affb34ef651cd3f10622d44c7b9e4290e9e411913e02d",
@@ -219,8 +219,8 @@
    "size": 36251
   },
   ".claude/policy/workspace_policy.json": {
-   "sha256": "9e7606f7f40d859dcd11209ff385a38cd7312c02f364fce282735ae644a9fc18",
-   "size": 44091
+   "sha256": "cdfccc933a6ce36b064addb10db098b4bdf7cf86260889c9b49f7265465f9b92",
+   "size": 44558
   },
   ".claude/policy/workspace_tree_manifest.json": {
    "sha256": "f9e55b0bf33c129787bfa43b8a49c86e5b95f04c509a33d9c4ea27617e8312d6",
@@ -263,12 +263,12 @@
    "size": 74068
   },
   ".claude/skills/business.py": {
-   "sha256": "643751d77f1cbd0457bf14fb8572dc355d049d51b60c8c41c06659374bf53dac",
-   "size": 28899
+   "sha256": "885dc2a2e40abcf9a2ef43ff2ae328b3a6752b995f3765b84e8f3b6c45ddb0ab",
+   "size": 29593
   },
   ".claude/skills/certify.py": {
-   "sha256": "84daf304e01a38db856ea4acd696374dcee0635246338f1b6fc7f2672c459288",
-   "size": 9878
+   "sha256": "6c8a60ad91d3f4f4318a23f6a90c461086a6d79be4ea68c29fe03047e35b8c35",
+   "size": 10022
   },
   ".claude/skills/channels.py": {
    "sha256": "40c69d73d011e9ed9cb03f95390d104a3faefd513a77de1a8e83379fdd9dbe5d",
@@ -283,16 +283,16 @@
    "size": 9737
   },
   ".claude/skills/documents.py": {
-   "sha256": "c152cd9b6e11186c30d8e2bd52cd0e4102883275d6e7a82c724a4b9d9fb0cb14",
-   "size": 7098
+   "sha256": "bc2ebd764cbf50bcb802d5ccb1b11f43681fcb72c3b2dfd6e78948f3af4e2722",
+   "size": 7378
   },
   ".claude/skills/engine.py": {
    "sha256": "3cef61c05c77f369ac9a82e0e85a2942e30e016c7a98cd2dbde54232da9ad87b",
    "size": 55058
   },
   ".claude/skills/executors.py": {
-   "sha256": "7602e2a1d45c7eb41017da27cc4a9f5b4758d06eabbcea56168dc003c410fb7a",
-   "size": 117022
+   "sha256": "36ae33d72c4b1a246db7185e5745e7495ac9faed42337b250b04f1edd0c297db",
+   "size": 117245
   },
   ".claude/skills/intelligence.py": {
    "sha256": "bd8ac001fec1718678dee99764b2b53b87d681fc6422306e85fd13d1c1e307b0",
@@ -311,8 +311,8 @@
    "size": 3462
   },
   ".claude/skills/skill.py": {
-   "sha256": "cd6ccfe3a473bdea7083db9ba508a1d85d87e0026fe2508ca43e2493020203b9",
-   "size": 14975
+   "sha256": "470f1871b044fb9fbbde8648a594ad2bd51ecd8dceb96d298dce015523acbe99",
+   "size": 14989
   },
   ".claude/skills/store.py": {
    "sha256": "d5ab1ad0567b0f6ca64108e7e1e53a59e6a3977f635de9c457980349be2181a6",
@@ -335,16 +335,16 @@
    "size": 12762
   },
   ".claude/tests/test_business.py": {
-   "sha256": "d9fb38d0d810d20f5854f978902f2bccca06594ef92248245124415f75b65d40",
-   "size": 33645
+   "sha256": "f6ccf36d6d9ae492bb19c14e76143fb30249cb2ec393da11f667d7419fe94c7e",
+   "size": 34076
   },
   ".claude/tests/test_channels.py": {
    "sha256": "eb1a424c0c8a5891ea4cb470f021137a426c943115f6fbec2c689599800183f8",
    "size": 59118
   },
   ".claude/tests/test_enforcement.py": {
-   "sha256": "953db2fac18f364e25d2e9b9f3624f86799d71acb39cb3f50df78ff06bf97c81",
-   "size": 17835
+   "sha256": "7ccaf6932e1be289f871ae32fe92cc06e9929fb03e665d4e6105327890d1a78d",
+   "size": 18487
   },
   ".claude/tests/test_failclosed.py": {
    "sha256": "5704af3d0a3cfe6845530a8529b3ddc3b1723583f7828d431b6fde59386ab2a7",
@@ -359,32 +359,32 @@
    "size": 60083
   },
   ".claude/tests/test_intelligence.py": {
-   "sha256": "a7754e89fb07712993b323092e29d0b03152dd148f39c378dc07b1dbc8960f9e",
-   "size": 34036
+   "sha256": "1f52434ea04938978d8bc7e3d6de64061570ce0868519fa812a9d5d148a01fd8",
+   "size": 34409
   },
   ".claude/tests/test_live_data.py": {
-   "sha256": "e095fe685e005f0d4bb065a6a47252cb9c4ad8027cd17d52316c1389f6caba94",
-   "size": 28123
+   "sha256": "8513c1bf59cae7379b18a0b584a8befdcc06561fe660f6c0d40c71866cb5875a",
+   "size": 28238
   },
   ".claude/tests/test_operating_layer.py": {
-   "sha256": "42081aef957f3ca02d87d7c2a408db73b094b725ee51d9ad69005c2353b8c542",
-   "size": 37533
+   "sha256": "f4a24a158155e2f7ddf52209e50e7f2affa7e5c494b033e5710d086f09043615",
+   "size": 37609
   },
   ".claude/tests/test_outlook_write.py": {
    "sha256": "7517b348b86b0ad9f70bc0fdeedb216ca5c6de8936e0d43d7d973a9b10171332",
    "size": 23787
   },
   ".claude/tests/test_portability.py": {
-   "sha256": "1336406425dff7489b9f413654e466d7ead6f6d574fba3984ce61f52a77d0e94",
-   "size": 28935
+   "sha256": "ec7989514ea5719d2642d9adb17f278ae7bc110069d50053f36050e449dccd2b",
+   "size": 29535
   },
   ".claude/tests/test_runtime.py": {
    "sha256": "3a669223d227e008608f1da529622ff9ab50bb094d43e1184b8dfb239df0d2a3",
    "size": 9706
   },
   ".claude/tests/test_scope.py": {
-   "sha256": "ab137d3c2d8e45304facdcd337dbe821c2b7997d7782f51eeb0dcfbcb695abf1",
-   "size": 22281
+   "sha256": "5de1989cac8926c8f819d2399452ea0c8a61d7d17b13793417181c611bce74a9",
+   "size": 22469
   },
   ".claude/tests/test_skills.py": {
    "sha256": "d591f14aa5a91a2aa83316ded73f9690c1a38acfb1d44aa8fd30c27072e2bb70",

@@ -184,7 +184,7 @@
   "eval:g_go_but_change",
   "eval:h_execute_routes_to_hands"
  ],
- "certified_at": "2026-09-14T19:33:53",
+ "certified_at": "2026-09-14T19:40:26",
  "fingerprint": "4857fb4dbee9af9aed0ae220",
  "core_fingerprint": "0af15296acbfd2ed",
  "result": "FAIL",
@@ -195,6 +195,7 @@
   "test_hardening",
   "test_enforcement",
   "test_workspace",
+  "test_scope",
   "test_runtime",
   "test_business",
   "test_boundary",
