@@ -32,7 +32,7 @@
  "evals": [],
  "routing_evals": [],
  "failed_tests": [],
- "certified_at": "2026-09-14T17:14:03",
+ "certified_at": "2026-09-14T17:24:07",
  "fingerprint": "7cda18ab56832ebf724818c6",
  "core_fingerprint": "c346f60bee1463d1",
  "result": "PASS",

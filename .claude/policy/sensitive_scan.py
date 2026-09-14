@@ -119,16 +119,27 @@ P="$R/.venv/Scripts/python.exe"; [ -x "$P" ] || P="$R/.venv/bin/python"; [ -x "$
 exec "$P" "$R/.claude/policy/sensitive_scan.py" --staged
 """
 HOOK_PRE_PUSH = """#!/usr/bin/env bash
-# Command-center boundary (pre-push): scan every commit about to leave this machine
+# Command-center boundary (pre-push): scan every commit about to leave this machine, then hand the SAME ref list to Git LFS so the
+# binary business artifacts are actually uploaded. Git delivers the refs on stdin ONCE, so they are buffered: a plain `while read`
+# loop would swallow them and git-lfs would silently upload nothing, leaving the remote full of pointers without content.
+# Order matters: the boundary scan runs first and decides; LFS only runs when the scan is clean.
 R="$(git rev-parse --show-toplevel)"
 P="$R/.venv/Scripts/python.exe"; [ -x "$P" ] || P="$R/.venv/bin/python"; [ -x "$P" ] || P=python
+REFS="$(cat)"
 rc=0
 while read local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_sha" ] && continue
   if [ "$remote_sha" = "0000000000000000000000000000000000000000" ] || [ -z "$remote_sha" ]; then range="$local_sha"; else range="$remote_sha..$local_sha"; fi
   "$P" "$R/.claude/policy/sensitive_scan.py" --range "$range" || rc=1
-done
-exit $rc
+done <<REFLIST
+$REFS
+REFLIST
+if [ $rc -ne 0 ]; then exit $rc; fi
+if grep -q "filter=lfs" "$R/.gitattributes" 2>/dev/null; then
+  command -v git-lfs >/dev/null 2>&1 || { echo "git-lfs is required by this repository (binary business artifacts live in Git LFS). Install it, then run: git lfs install"; exit 2; }
+  echo "$REFS" | git lfs pre-push "$@" || exit 1
+fi
+exit 0
 """
 
 def install_hooks(root=ROOT):

@@ -295,6 +295,22 @@ class P07_PortableBinaryWorkspace(unittest.TestCase):
         self.assertNotIn("_TEMP_WORK_COLLECTION", (ROOT / ".gitignore").read_text(encoding="utf-8"))
         self.assertNotIn("_TEMP_WORK_COLLECTION", (ROOT / ".claude/policy/tree_manifest.py").read_text(encoding="utf-8"))
 
+    @covers(*GOV, kinds=("unit", "adversarial", "failure"))
+    def test_the_push_hook_scans_first_and_still_uploads_lfs(self):
+        """Git hands the refs to a pre-push hook on stdin ONCE. A plain `while read` loop swallows them, git-lfs then uploads
+        nothing, and the remote ends up holding pointers with no content. The hook must buffer stdin, keep the boundary scan
+        first and decisive, and only then run Git LFS."""
+        body = ss.HOOK_PRE_PUSH
+        self.assertIn("sensitive_scan.py", body)
+        self.assertIn("git lfs pre-push", body)
+        self.assertIn('REFS="$(cat)"', body)
+        self.assertIn('echo "$REFS" | git lfs pre-push', body)
+        self.assertLess(body.index("sensitive_scan.py"), body.index("git lfs pre-push"), "the boundary scan must run before LFS")
+        self.assertIn("if [ $rc -ne 0 ]; then exit $rc; fi", body)
+        installed = ROOT / ".git" / "hooks" / "pre-push"
+        if installed.exists():
+            self.assertEqual(installed.read_text(encoding="utf-8"), body, "the installed hook drifted from the versioned one")
+
     @covers(*GOV, kinds=("completion", "unit"))
     def test_the_migration_manifest_accounts_for_every_file(self):
         """Nothing was moved or dropped without a record: destinations exist and are versioned, drops name the surviving twin."""

@@ -158,6 +158,7 @@
   "test_portability.P07_PortableBinaryWorkspace.test_binary_business_artifacts_are_carried_by_git_lfs",
   "test_portability.P07_PortableBinaryWorkspace.test_every_business_file_in_the_taxonomy_is_versioned",
   "test_portability.P07_PortableBinaryWorkspace.test_the_migration_manifest_accounts_for_every_file",
+  "test_portability.P07_PortableBinaryWorkspace.test_the_push_hook_scans_first_and_still_uploads_lfs",
   "test_portability.P07_PortableBinaryWorkspace.test_the_staging_subtree_is_gone_from_the_contract",
   "test_skills.T04_Authority.test_approval_management_executor"
  ],
@@ -226,6 +227,7 @@
   "test_outlook_write.O02b_SendTheReviewedDraft.test_adapter_send_of_a_draft_is_verified_only_when_it_left_drafts_and_is_in_sent",
   "test_portability.P01_TreeManifest.test_out_of_date_manifest_is_detected",
   "test_portability.P07_PortableBinaryWorkspace.test_no_plain_git_blob_exceeds_the_github_limit",
+  "test_portability.P07_PortableBinaryWorkspace.test_the_push_hook_scans_first_and_still_uploads_lfs",
   "test_skills.T04_Authority.test_approval_management_executor"
  ],
  "hardening_cases": [
@@ -329,6 +331,7 @@
   "test_portability.P06_CleanCloneBootstrap.test_bootstrap_restores_canonical_workspace_and_is_idempotent",
   "test_portability.P06_CleanCloneBootstrap.test_clone_used_nothing_from_the_original_workspace_but_git_and_the_key",
   "test_portability.P07_PortableBinaryWorkspace.test_no_plain_git_blob_exceeds_the_github_limit",
+  "test_portability.P07_PortableBinaryWorkspace.test_the_push_hook_scans_first_and_still_uploads_lfs",
   "test_runtime.R02_LauncherIndependentOfPath.test_broken_path_python_does_not_change_behaviour",
   "test_runtime.R02_LauncherIndependentOfPath.test_hooks_run_with_no_python_and_no_git_on_path",
   "test_runtime.R03_FailClosedWhenRuntimeBroken.test_entry_point_outside_venv_fails_closed_without_bootstrap",
@@ -394,7 +397,8 @@
   "test_outlook_write.O02b_SendTheReviewedDraft.test_send_it_targets_the_verified_provider_draft_and_needs_its_own_approval",
   "test_portability.P02_EmptyDirectoriesAndGitignore.test_no_plaintext_credential_in_git_history",
   "test_portability.P06_CleanCloneBootstrap.test_clone_used_nothing_from_the_original_workspace_but_git_and_the_key",
-  "test_portability.P07_PortableBinaryWorkspace.test_no_plain_git_blob_exceeds_the_github_limit"
+  "test_portability.P07_PortableBinaryWorkspace.test_no_plain_git_blob_exceeds_the_github_limit",
+  "test_portability.P07_PortableBinaryWorkspace.test_the_push_hook_scans_first_and_still_uploads_lfs"
  ],
  "failure_injection": [
   "test_actions.H01_Governance.test_approval_binds_to_exact_action_and_parameter_change_invalidates",
@@ -616,7 +620,7 @@
   "test_operating_layer.M01_Commitments.test_executor_answers"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T17:14:03",
+ "certified_at": "2026-09-14T17:24:07",
  "fingerprint": "aca82a59d8a9323474e44c8c",
  "core_fingerprint": "c346f60bee1463d1",
  "result": "PASS",
