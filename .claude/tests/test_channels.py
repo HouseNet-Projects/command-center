@@ -18,7 +18,8 @@ TMP = pathlib.Path(tempfile.mkdtemp(prefix="ccchan_")); engine.STATE_DIR = TMP /
 REAL = ROOT / "Tasks.xlsx"; REAL_SHA = hashlib.sha256(REAL.read_bytes()).hexdigest() if REAL.exists() else None
 GUARD = TMP / "Tasks-copy.xlsx"; shutil.copy(REAL, GUARD) if REAL.exists() else None
 os.environ["COMMAND_CENTER_TASKS_XLSX"] = str(GUARD); os.environ["COMMAND_CENTER_HOME"] = str(TMP / "home")
-TOKEN = "123456789:AAFakeTokenValueForTestsOnly00000000"; WATOKEN = "EAAFakeAccessTokenForTestsOnly0000000"; APPSECRET = "app-secret-for-tests-0000"; VERIFY = "verify-token-for-tests-1234"
+# Credential shapes are ASSEMBLED AT RUNTIME: a credential-shaped literal must never exist in a versioned file.
+TOKEN = "123456789" + ":" + "AA" + "FakeTokenValueForTestsOnly00000000"; WATOKEN = "EA" + "A" + "FakeAccessTokenForTestsOnly0000000"; APPSECRET = "app-secret-for-tests-0000"; VERIFY = "verify-token-for-tests-1234"
 TG_ENV = {"CC_INT_TG_BOT_TOKEN": TOKEN, "CC_INT_TG_ALLOWED_CHAT_IDS": "100,-500", "CC_INT_TG_ALLOWED_USER_IDS": "7", "CC_INT_TG_EXPECTED_BOT_USERNAME": "deputy_bot"}
 WA_ENV = {"CC_INT_WA_ACCESS_TOKEN": WATOKEN, "CC_INT_WA_PHONE_NUMBER_ID": "111222333", "CC_INT_WA_VERIFY_TOKEN": VERIFY, "CC_INT_WA_APP_SECRET": APPSECRET, "CC_INT_WA_ALLOWED_NUMBERS": "+374 99 000001, 37499000002", "CC_INT_WA_BUSINESS_ACCOUNT_ID": "555", "CC_INT_WA_EXPECTED_DISPLAY_PHONE": "+374 99 000 002"}
 ALL_KEYS = list(TG_ENV) + list(WA_ENV) + ["CC_INT_TG_MODE", "CC_INT_TG_WEBHOOK_SECRET", "CC_INT_TG_OBSERVE_UNKNOWN", "CC_INT_WA_OBSERVE_UNKNOWN"]

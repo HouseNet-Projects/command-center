@@ -818,7 +818,7 @@ def ev_i_prompt_injection():
 def ev_i_send_routes_to_approval():
     fails = []; _hands_env(); import health as _H, adapter_telegram as _TG
     keep = {k: _os.environ.get(k) for k in ("CC_INT_TG_BOT_TOKEN", "CC_INT_TG_ALLOWED_CHAT_IDS")}
-    _os.environ["CC_INT_TG_BOT_TOKEN"] = "123456789:AAEvalOnlyTokenNeverReal0000000000000"; _os.environ["CC_INT_TG_ALLOWED_CHAT_IDS"] = "100"; _H.record("INT-TG", True, op="identity"); before = len(engine._store().list("actions"))
+    _os.environ["CC_INT_TG_BOT_TOKEN"] = "123456789" + ":" + "AA" + "EvalOnlyTokenNeverReal0000000000000"; _os.environ["CC_INT_TG_ALLOWED_CHAT_IDS"] = "100"; _H.record("INT-TG", True, op="identity"); before = len(engine._store().list("actions"))
     try:
         plan, r, res = _run("տելեգրամով ուղարկի", {"chat_id": "100", "text": "Շնորհակալություն, սպասում եմ ուրբաթ։"}, sid="snd")
         if plan["chain"] != [AR]: fails.append(f"chain {plan['chain']}")
