@@ -47,7 +47,7 @@
   "test_skills.T02b_DomainBoundary.test_system_intents_route_no_business_skill"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T13:25:31",
+ "certified_at": "2026-09-14T14:58:37",
  "fingerprint": "f9bfaa69a96b2235a6483d57",
  "core_fingerprint": "c4fc99c8a9df60f4",
  "result": "PASS",
