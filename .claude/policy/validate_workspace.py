@@ -324,6 +324,12 @@ def check_interaction(root, pol):
         # the presentation rule must never be allowed to become an identity-confirmation rule
         if "NOT confirmed identity" not in (hri.get("safety") or ""):
             problems.append("POLICY: interaction.human_readable_identity.safety must keep display name/username OUT of confirmed identity")
+        # a human-readable LABEL is enough for ordinary work: an absent mapping must never become a question to the owner
+        ops = hri.get("confirmation_required_only_for")
+        if not isinstance(ops, dict) or not ops:
+            problems.append("POLICY: interaction.human_readable_identity.confirmation_required_only_for must name the operations that truly need a confirmed identity")
+        if "NOT a blocker" not in (hri.get("never_block") or ""):
+            problems.append("POLICY: interaction.human_readable_identity.never_block must keep a missing identity mapping from becoming a blocker")
     for rel, needles in (enf.get("mirror_files") or {}).items():
         f = root / rel
         if not f.exists(): problems.append(f"{rel}: interaction mirror file missing"); continue

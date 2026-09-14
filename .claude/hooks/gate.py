@@ -101,7 +101,10 @@ def interaction_line(engine):
             "անգլերեն/ռուսերեն/խառը։ Տեխնիկական identifier-ները մնում են բնօրինակ, բացատրությունը՝ հայերեն։\n"
             "὆4 ՄԱՐԴԸ · " + order +
             " — հում id-ով հարց չես տալիս, եթե safe metadata (username/first_name/last_name) կարող ես ինքդ կարդալ. "
-            "provider-ը դաշտ չի տվել՝ ուղիղ ասում ես, չես հորինում. ցուցադրվող անունը ինքնության հաստատում ՉԷ։")
+            "provider-ը դաշտ չի տվել՝ ուղիղ ասում ես, չես հորինում. ցուցադրվող անունը ինքնության հաստատում ՉԷ։ "
+            "Սովորական read/intelligence/reporting-ի համար @username-ը (կամ display name-ը) ԲԱՎԱՐԱՐ պիտակ է՝ ցույց տուր և "
+            "ՇԱՐՈՒՆԱԿԻՐ. բացակայող identity mapping-ը blocker չէ. «ով է սա» հարցնում ես ՄԻԱՅՆ երբ գործողությունն ինքն է պահանջում "
+            "հաստատված ինքնություն (" + ", ".join(hri.get("confirmation_required_only_for") or ()) + ")։")
 
 def on_prompt(data, engine, reg):
     prompt = data.get("user_prompt") or data.get("prompt") or ""

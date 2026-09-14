@@ -931,7 +931,7 @@
     "preserve_note": "These may keep their original form, but their explanation is in Armenian.",
     "hidden_reasoning": "Internal hidden model reasoning is not a user-visible interface and is not a checkable contract; any reasoning SUMMARY shown to the owner is Armenian.",
     "human_readable_identity": {
-      "rule": "Never ask the owner to decode a raw system identifier. Resolve the best available human-readable identity from evidence first, and ask only if it is still ambiguous.",
+      "rule": "Never ask the owner to decode a raw system identifier. Present the best available human-readable label from the evidence and CONTINUE WORKING; ask the owner to confirm WHO someone is only when an operation listed in confirmation_required_only_for actually depends on a confirmed identity.",
       "order": [
         "READ AVAILABLE EVIDENCE",
         "RESOLVE SAFE HUMAN CONTEXT",
@@ -947,7 +947,16 @@
       ],
       "raw_id_use": "only as a technical reference shown alongside human-readable context",
       "absent_field_rule": "If the provider did not supply a field (for example username), say so plainly - never invent it.",
-      "safety": "Presentation rule only. It never confirms identity: display name, username or similarity is NOT confirmed identity, and identity binding stays fail-closed and provenance-based."
+      "safety": "Presentation rule only. It never confirms identity: display name, username or similarity is NOT confirmed identity, and identity binding stays fail-closed and provenance-based.",
+      "label_rule": "For ordinary read, intelligence and reporting the provider's @username - or the display name / first_name plus last_name when there is no username - IS the human-readable label. Use it and keep going.",
+      "confirmation_required_only_for": {
+        "ROLE_BINDING": "binding a message or fact to a specific employee or role",
+        "OWNERSHIP": "deciding who owns a commitment or a task",
+        "AUTHORITY": "deciding authority or permission",
+        "CROSS_SYSTEM_RECONCILIATION": "reconciling the same person across systems",
+        "AMBIGUOUS_NAME": "a real ambiguity between people with the same or a similar name"
+      },
+      "never_block": "A missing identity mapping is NOT a blocker. Never ask the owner to confirm who someone is merely because no mapping exists, and never stall ordinary reporting on it."
     },
     "note": "SINGLE SOURCE OF TRUTH for how Deputy talks to the owner. CLAUDE.md and the docs mirror this block; validate_workspace.check_interaction() enforces it. This is an interaction contract and changes no authority, approval or security boundary.",
     "enforcement": {
@@ -962,7 +971,10 @@
         "rule",
         "order",
         "absent_field_rule",
-        "safety"
+        "safety",
+        "label_rule",
+        "confirmation_required_only_for",
+        "never_block"
       ],
       "mirror_files": {
         "CLAUDE.md": [
