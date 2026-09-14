@@ -8,6 +8,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE)); sys.path.insert(0, str(ROOT / ".claude" / "policy")); sys.path.insert(0, str(ROOT / ".claude" / "skills"))
 from testing import covers
+sys.path.insert(0, str(ROOT / '.claude' / 'policy')); import paths as pp   # ONE business-root resolver
 import sensitive_scan as ss
 
 GOV = ("authority_checking", "approval_management", "completion_verification", "audit_logging", "data_sensitivity_awareness")
@@ -116,7 +117,7 @@ class S03_GitStagingBoundary(unittest.TestCase):
         out = subprocess.run(["git", "ls-files"], cwd=str(ROOT), capture_output=True, text=True).stdout.split()
         bad = [rel for rel in out if ss.classify_path(rel, POL)[0] in ss.blocking_classes(POL)]
         self.assertEqual(bad, [], bad)
-        self.assertIn("Tasks.xlsx", out); self.assertTrue(any(r.startswith(".claude/business/overlay/") for r in out) or True)   # business workspace is versioned by decision
+        self.assertIn(pp.to_repo("Tasks.xlsx"), out); self.assertTrue(any(r.startswith(".claude/business/overlay/") for r in out) or True)   # business workspace is versioned by decision
         self.assertTrue(ss.hooks_installed(ROOT))
 
 if __name__ == "__main__":

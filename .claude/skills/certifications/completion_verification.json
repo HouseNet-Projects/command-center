@@ -620,9 +620,9 @@
   "test_operating_layer.M01_Commitments.test_executor_answers"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T17:35:02",
- "fingerprint": "7d9fcf851d85cc03bed142a6",
- "core_fingerprint": "c346f60bee1463d1",
+ "certified_at": "2026-09-14T20:14:36",
+ "fingerprint": "7605f41df216ed6a8d6c2140",
+ "core_fingerprint": "0af15296acbfd2ed",
  "result": "PASS",
  "suites": [
   "test_skills",
@@ -631,6 +631,7 @@
   "test_hardening",
   "test_enforcement",
   "test_workspace",
+  "test_scope",
   "test_runtime",
   "test_business",
   "test_boundary",

@@ -160,6 +160,9 @@ def prepare(req, *, session_id=None, ticket_id=None, batch=None, reg=None):
     def deny(code, reason):
         a["state"] = "DENIED"; a["codes"].append(code); a["history"].append({"at": _now(), "state": "DENIED", "code": code, "reason": reason}); a["reason"] = reason
         _audit({"execution_id": req["action_id"], "ticket_id": ticket_id, "result_status": "DENIED", "code": code, "reason": reason, "action": _summary(req)}, required=False); return _save(a)
+    # HARD SCOPE LOCK: a system Gev did not ask about in THIS task is not proposed at all (workspace_policy.json -> scope_lock)
+    ok_scope, why_scope = engine.scope_allows_system(engine.get_ticket(ticket_id) if ticket_id else None, req["target_system"])
+    if not ok_scope: return deny("OUT_OF_SCOPE", f"{why_scope} — Gev did not ask for this in the current task; nothing prepared")
     if not cap.get("implemented"): return deny("CAPABILITY_UNAVAILABLE", f"{req['target_system']} {req['target_operation']}: {cap.get('level')} — {cap.get('note') or 'no write adapter'}")
     if cap.get("level") == "UNAVAILABLE" or not cap.get("configured"): return deny("NOT_CONFIGURED" if not cap.get("configured") else "CAPABILITY_UNAVAILABLE", f"{req['target_system']} is {cap.get('level')}: {cap.get('note') or cap.get('unblock') or 'not configured/connected'}")
     reg = reg or engine.load_registry(); skill = reg["_index"].get("action_runtime") or {"authority_boundary": {"max_action": "EXECUTE_MATERIAL"}}

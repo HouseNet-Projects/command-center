@@ -81,9 +81,9 @@
   "eval:r_hy_todo"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T17:35:02",
- "fingerprint": "617bd1decd964cb8f2181788",
- "core_fingerprint": "c346f60bee1463d1",
+ "certified_at": "2026-09-14T20:14:36",
+ "fingerprint": "6272c66e41d91bde835a1146",
+ "core_fingerprint": "0af15296acbfd2ed",
  "result": "PASS",
  "suites": [
   "test_skills",
@@ -92,6 +92,7 @@
   "test_hardening",
   "test_enforcement",
   "test_workspace",
+  "test_scope",
   "test_runtime",
   "test_business",
   "test_boundary",

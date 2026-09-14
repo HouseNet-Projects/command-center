@@ -28,9 +28,9 @@
   "test_business.B08_RealModel.test_real_queries"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T17:35:02",
- "fingerprint": "f450e7fcb9b7c86e7b9f8455",
- "core_fingerprint": "c346f60bee1463d1",
+ "certified_at": "2026-09-14T20:14:36",
+ "fingerprint": "2a590a0cf773dab3186e7f47",
+ "core_fingerprint": "0af15296acbfd2ed",
  "result": "PASS",
  "suites": [
   "test_skills",
@@ -39,6 +39,7 @@
   "test_hardening",
   "test_enforcement",
   "test_workspace",
+  "test_scope",
   "test_runtime",
   "test_business",
   "test_boundary",

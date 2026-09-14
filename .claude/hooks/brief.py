@@ -46,16 +46,17 @@ try:
 except Exception as e: print(f"  🔄 sync state unavailable ({type(e).__name__}: {e}) — consider GitHub NOT current")
 
 # 1) inbox
-inbox = ROOT / "00_Inbox"
+import paths                                                            # ONE business-root resolver (sys.path already carries .claude/policy)
+inbox = paths.biz("00_Inbox", repo_root=ROOT)
 items = [f for f in os.listdir(inbox) if f != "Input.md"] if inbox.is_dir() else []
 if items:
-    print(f"\n  📥 00_Inbox — {len(items)} ԱՆԴԱՍԱՎՈՐ ԲԱՆ, դասավորի ԱՌԱՋԻՆԸ՝")
+    print(f"\n  📥 {paths.to_repo('00_Inbox')} — {len(items)} ԱՆԴԱՍԱՎՈՐ ԲԱՆ, դասավորի ԱՌԱՋԻՆԸ՝")
     for f in items: print(f"       • {f}")
-else: print("\n  📥 00_Inbox դատարկ է ✓")
+else: print(f"\n  📥 {paths.to_repo('00_Inbox')} դատարկ է ✓")
 
 # 2) unprocessed text drop
 try:
-    raw = io.open(ROOT / "00_Inbox" / "Input.md", encoding="utf-8").read()
+    raw = io.open(paths.inbox_input(ROOT), encoding="utf-8").read()
     seg = raw.split("## Չմշակված", 1); body = seg[1].split("---", 1)[0] if len(seg) > 1 else ""
     if "\n".join(l for l in body.splitlines() if l.strip() and not l.strip().startswith("<!--")).strip():
         print("\n  ✉  Input.md-ում կա չմշակված տեքստ — դարձրու առաջադրանք")
@@ -136,7 +137,7 @@ except Exception as e:
 if not engine_used:
     try:
         import openpyxl
-        wb = openpyxl.load_workbook(ROOT / "Tasks.xlsx", data_only=True); ws = wb["ԱՌԱՋԱԴՐԱՆՔՆԵՐ"]
+        wb = openpyxl.load_workbook(paths.tasks(ROOT), data_only=True); ws = wb["ԱՌԱՋԱԴՐԱՆՔՆԵՐ"]
         over, today = [], []
         for r in range(13, ws.max_row + 1):
             n, task, st, due = ws.cell(row=r,column=2).value, ws.cell(row=r,column=3).value, ws.cell(row=r,column=6).value, ws.cell(row=r,column=11).value

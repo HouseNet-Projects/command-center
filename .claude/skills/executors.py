@@ -4,7 +4,7 @@ Contract: fn(inputs: dict, skill: dict, reg: dict) -> dict with 'status' in
   EXECUTED | VERIFIED | RECORDED | DUPLICATE | BLOCKED | ASSISTED  (+ data).
 Never fabricates numbers: skills needing data the runtime lacks return BLOCKED with a reason.
 """
-import json, re, datetime, pathlib, hashlib
+import json, re, sys, datetime, pathlib, hashlib
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -12,7 +12,8 @@ ROOT = HERE.parent.parent
 def _st():
     import engine
     return engine._store()
-XLSX = ROOT / "Tasks.xlsx"
+sys.path.insert(0, str(ROOT / ".claude" / "policy")); import paths        # ONE business-root resolver (workspace_policy.json -> business_root)
+XLSX = paths.tasks(ROOT)
 SHEET = "ԱՌԱՋԱԴՐԱՆՔՆԵՐ"
 HDR_ROW, FIRST_ROW = 12, 13
 COL = {"id": 2, "task": 3, "status": 6, "comment": 7, "due": 11, "owner": 12}
@@ -628,7 +629,7 @@ def information_classification(inputs, skill=None, reg=None):
 
 def source_verification(inputs, skill=None, reg=None):
     p = pathlib.Path(inputs.get("path") or XLSX)
-    if not p.is_absolute(): p = ROOT / p
+    if not p.is_absolute(): p = paths.resolve(ROOT, inputs.get("path") or XLSX)        # business-relative sources resolve under the business root
     if not p.exists(): return {"status": "BLOCKED", "code": "SOURCE_MISSING", "reason": f"source missing: {p.name}", "path": str(p)}
     age_h = (datetime.datetime.now() - datetime.datetime.fromtimestamp(p.stat().st_mtime)).total_seconds() / 3600
     res = {"status": "VERIFIED", "path": p.name, "exists": True, "age_hours": round(age_h, 1),
@@ -667,7 +668,8 @@ def completion_verification(inputs, skill=None, reg=None):
     if not spec: return {"status": "BLOCKED", "reason": "evidence_spec missing"}
     kind = spec.get("type")
     if kind == "file_exists":
-        p = pathlib.Path(spec["path"]); p = p if p.is_absolute() else ROOT / p
+        q = pathlib.Path(spec["path"])
+        p = q if q.is_absolute() else paths.resolve(ROOT, spec["path"])        # business-relative evidence resolves through the ONE business-root resolver
         ok = p.exists()
         return {"status": "VERIFIED" if ok else "ATTEMPTED", "verified": ok, "evidence": {"path": str(p), "exists": ok}}
     if kind == "task_status":
@@ -703,7 +705,7 @@ def open_loops(inputs, skill=None, reg=None):
 def memory_retrieval(inputs, skill=None, reg=None):
     q = _norm(inputs.get("query", inputs.get("context", ""))); hits = []
     if not q: return {"status": "BLOCKED", "code": "MISSING_INPUT", "reason": "query missing (what to find)"}
-    files = list((ROOT).glob("*.md")) + list((ROOT / ".claude" / "docs").glob("*.md")) + list((ROOT / "01_Active").rglob("*.md")) + [ROOT / "00_Inbox" / "Input.md"]
+    files = list(paths.root(ROOT).glob("*.md")) + list((ROOT / ".claude" / "docs").glob("*.md")) + list(paths.biz("01_Active", repo_root=ROOT).rglob("*.md")) + [paths.inbox_input(ROOT)]
     for mem in (pathlib.Path.home() / ".claude" / "projects").glob("*Command-center*/memory"):      # machine-local Claude memory, wherever this clone lives
         if mem.is_dir(): files += list(mem.glob("*.md"))
     for f in files:

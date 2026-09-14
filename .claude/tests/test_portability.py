@@ -11,6 +11,8 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE)); sys.path.insert(0, str(ROOT / ".claude" / "policy")); sys.path.insert(0, str(ROOT / ".claude" / "runtime")); sys.path.insert(0, str(ROOT / ".claude" / "skills")); sys.path.insert(0, str(ROOT / ".claude" / "integrations"))
 from testing import covers
 import tree_manifest as tm, state_snapshot as ssn, secure_recovery as sr, sensitive_scan as ss, engine, store
+import paths as pp                                                     # ONE business-root resolver
+def W(rel): return pp.to_repo(rel)
 
 GOV = ("authority_checking", "approval_management", "completion_verification", "audit_logging")
 TMP = pathlib.Path(tempfile.mkdtemp(prefix="ccport_"))
@@ -51,10 +53,10 @@ class P01_TreeManifest(unittest.TestCase):
     def test_manifest_is_derived_from_policy_and_current(self):
         self.assertEqual(tm.check_manifest(), []); m = tm.build()
         paths = {e["path"]: e for e in m["entries"]}
-        for req in ("CLAUDE.md", "README.md", "Tasks.xlsx", "Journal.md", "Actions.md", "bootstrap.py", "00_Inbox", "01_Active/Sales", "02_Reference/Systems", "04_Sources/Imports", "05_Archive", ".claude/business", ".claude/integrations", ".claude/state/durable", ".secure/credentials.gpg", ".claude/policy/workspace_tree_manifest.json"):
+        for req in ("CLAUDE.md", "README.md", W("Tasks.xlsx"), W("Journal.md"), W("Actions.md"), "bootstrap.py", W("00_Inbox"), W("01_Active/Sales"), W("02_Reference/Systems"), W("04_Sources/Imports"), W("05_Archive"), ".claude/business", ".claude/integrations", ".claude/state/durable", ".secure/credentials.gpg", ".claude/policy/workspace_tree_manifest.json"):
             self.assertIn(req, paths, req); self.assertTrue(paths[req]["required"], req)
         self.assertEqual(paths[".secure/credentials.gpg"]["durability"], "VERSION_ENCRYPTED"); self.assertEqual(paths[".venv"]["durability"], "REGENERATE"); self.assertEqual(paths[".claude/business/business_model.json"]["durability"], "REGENERATE")
-        self.assertEqual(paths[".claude/state/skill_state.db"]["durability"], "EPHEMERAL"); self.assertEqual(paths["Tasks.xlsx"]["durability"], "VERSION_DIRECTLY")
+        self.assertEqual(paths[".claude/state/skill_state.db"]["durability"], "EPHEMERAL"); self.assertEqual(paths[W("Tasks.xlsx")]["durability"], "VERSION_DIRECTLY")
         for e in m["entries"]: self.assertIn(e["durability"], ("VERSION_DIRECTLY", "VERSION_ENCRYPTED", "REGENERATE", "MACHINE_LOCAL", "EPHEMERAL")); self.assertTrue(e["restore"])
         self.assertEqual(tm.verify(ROOT), [])
     @covers(*GOV, kinds=("unit", "failure"))
@@ -73,10 +75,10 @@ class P02_EmptyDirectoriesAndGitignore(unittest.TestCase):
     def test_gitignore_matches_the_durability_model(self):
         gi = (ROOT / ".gitignore").read_text(encoding="utf-8")
         for must in (".venv/", "__pycache__", ".claude/state/*", "!.claude/state/durable/", ".claude/audit/", ".claude/business/*.json", "*.key", ".env", ".secure/*.plain*", "*.lock"): self.assertIn(must, gi, must)
-        for never in ("Tasks.xlsx", "Journal.md", "Actions.md", "01_Active/", "04_Sources/", ".claude/business/overlay/"):
+        for never in (W("Tasks.xlsx"), W("Journal.md"), W("Actions.md"), W("01_Active") + "/", W("04_Sources") + "/", ".claude/business/overlay/"):
             self.assertFalse(any(l.strip() == never for l in gi.splitlines()), f".gitignore must not ignore durable {never}")
         chk = lambda rel: _git(["check-ignore", "-q", rel], ROOT).returncode == 0
-        for rel in ("Tasks.xlsx", "Journal.md", "01_Active/Sales/x.docx", ".claude/business/overlay/ov_people.py", ".claude/state/durable/commitments.jsonl", ".secure/credentials.gpg", ".secure/manifest.json"): self.assertFalse(chk(rel), rel)
+        for rel in (W("Tasks.xlsx"), W("Journal.md"), W("01_Active/Sales/x.docx"), ".claude/business/overlay/ov_people.py", ".claude/state/durable/commitments.jsonl", ".secure/credentials.gpg", ".secure/manifest.json"): self.assertFalse(chk(rel), rel)
         for rel in (".venv/x", ".claude/state/skill_state.db", ".claude/state/journal.jsonl", ".claude/audit/skill_audit.jsonl", ".claude/business/business_model.json", ".secure/credentials.plain", "any/recovery.key", ".claude/settings.local.json"): self.assertTrue(chk(rel), rel)
     @covers("data_sensitivity_awareness", *GOV, kinds=("unit", "adversarial"))
     def test_no_plaintext_credential_in_git_history(self):
@@ -192,7 +194,7 @@ class P06_CleanCloneBootstrap(unittest.TestCase):
         for e in tm.build()["entries"]:
             if e["required"] and e["path"] != ".git":
                 p = d / e["path"]; self.assertTrue(p.is_dir() if e["kind"] == "directory" else p.is_file(), f"restored workspace lacks {e['path']}")
-        for f in ("Tasks.xlsx", "Journal.md", "Actions.md", "00_Inbox/Input.md", "02_Reference/People/Staffing-plan-2026-09-07.xlsx", ".claude/business/overlay/ov_people.py", ".claude/business/business_model.json", ".claude/business/overlay.json", ".claude/business/certification.json", ".claude/integrations/certification.json", ".claude/state/skill_state.db"):
+        for f in (W("Tasks.xlsx"), W("Journal.md"), W("Actions.md"), W("00_Inbox/Input.md"), W("02_Reference/People/Staffing-plan-2026-09-07.xlsx"), ".claude/business/overlay/ov_people.py", ".claude/business/business_model.json", ".claude/business/overlay.json", ".claude/business/certification.json", ".claude/integrations/certification.json", ".claude/state/skill_state.db"):
             self.assertTrue((d / f).exists(), f)
         cert = json.loads((d / ".claude" / "business" / "certification.json").read_text(encoding="utf-8")); self.assertEqual(cert["result"], "PASS")
         src_cert = json.loads((ROOT / ".claude" / "business" / "certification.json").read_text(encoding="utf-8"))
@@ -219,13 +221,13 @@ class P06_CleanCloneBootstrap(unittest.TestCase):
         """LIVE DATA path: the restored Tasks.xlsx is byte-identical to the committed one (the synced truth), and the business understanding
         (core fingerprint) matches even though the register is STRUCTURE-scoped live data — never a stale extracted snapshot."""
         c = _clean_clone(); d = c["dir"]
-        committed = subprocess.run(["git", "show", "HEAD:Tasks.xlsx"], cwd=str(ROOT), capture_output=True).stdout
+        committed = subprocess.run(["git", "show", "HEAD:" + W("Tasks.xlsx")], cwd=str(ROOT), capture_output=True).stdout
         head = committed[:300].decode("utf-8", "replace")
         if head.startswith("version https://git-lfs"):
             oid = [l.split("sha256:")[1].strip() for l in head.splitlines() if l.startswith("oid sha256:")][0]
         else:
             oid = hashlib.sha256(committed).hexdigest()
-        self.assertEqual(hashlib.sha256((d / "Tasks.xlsx").read_bytes()).hexdigest(), oid)   # real bytes restored, not a pointer
+        self.assertEqual(hashlib.sha256((d / W("Tasks.xlsx")).read_bytes()).hexdigest(), oid)   # real bytes restored, not a pointer
         src = json.loads((d / ".claude" / "business" / "sources.json").read_text(encoding="utf-8")); s9 = src["source_snapshot"]["S09"]
         self.assertEqual(s9["scope"], "STRUCTURE"); self.assertEqual(s9["live_integration"], "INT-TASKS"); self.assertIsNone(s9["size"])
     @covers(*GOV, kinds=("adversarial", "unit"))
@@ -238,7 +240,7 @@ class P06_CleanCloneBootstrap(unittest.TestCase):
 
 BIZ_EXT = (".docx", ".xlsx", ".xlsm", ".pptx", ".pdf", ".zip", ".7z", ".bundle", ".png", ".jpg", ".jpeg", ".html", ".svg", ".csv", ".md", ".txt", ".json", ".ics", ".yaml", ".patch", ".sha256", ".py", ".bat")
 LFS_EXT = (".docx", ".xlsx", ".xlsm", ".pptx", ".pdf", ".zip", ".7z", ".bundle")
-AREAS = ("00_Inbox", "01_Active", "02_Reference", "03_Completed", "04_Sources", "05_Archive")
+AREAS = pp.areas()
 GITHUB_BLOB_LIMIT = 100 * 1024 * 1024
 
 class P07_PortableBinaryWorkspace(unittest.TestCase):
@@ -314,18 +316,19 @@ class P07_PortableBinaryWorkspace(unittest.TestCase):
     @covers(*GOV, kinds=("completion", "unit"))
     def test_the_migration_manifest_accounts_for_every_file(self):
         """Nothing was moved or dropped without a record: destinations exist and are versioned, drops name the surviving twin."""
-        mf = ROOT / "05_Archive/Migration-2026-09-14/Migration-manifest-2026-09-14.json"
+        mf = ROOT / W("05_Archive/Migration-2026-09-14/Migration-manifest-2026-09-14.json")
         self.assertTrue(mf.exists())
         recs = json.loads(mf.read_text(encoding="utf-8"))
         self.assertGreater(len(recs), 100)
         for r in recs:
             self.assertTrue(r.get("old") and r.get("sha") and r.get("why"), r)
             if r["new"]:
-                self.assertTrue((ROOT / r["new"]).exists(), "manifest destination missing: " + r["new"])
-                self.assertIn(r["new"], self.tracked, "manifest destination not versioned: " + r["new"])
+                dest = W(r["new"])                                        # the manifest records business-relative destinations
+                self.assertTrue((ROOT / dest).exists(), "manifest destination missing: " + dest)
+                self.assertIn(dest, self.tracked, "manifest destination not versioned: " + dest)
             else:
                 self.assertIn("byte-identical to", r["why"], r)
-                twin = r["why"].split("byte-identical to")[-1].replace("the tracked", "").strip()
+                twin = W(r["why"].split("byte-identical to")[-1].replace("the tracked", "").strip())
                 self.assertTrue((ROOT / twin).exists(), "surviving twin missing: " + twin)
 
 if __name__ == "__main__":

@@ -19,6 +19,11 @@ Options: --release  run the full skill.py release at step 14 · --no-secrets  sk
 import sys, os, json, pathlib, subprocess, shutil, datetime, platform
 ROOT = pathlib.Path(__file__).resolve().parent
 RUNTIME = ROOT / ".claude" / "runtime"
+# Gev's business workspace: read straight from the versioned policy so stage 1 stays stdlib-only (no import of the runtime).
+try: BUSINESS_ROOT_NAME = json.loads((ROOT / ".claude" / "policy" / "workspace_policy.json").read_text(encoding="utf-8")).get("business_root") or "WORKSPACE"
+except Exception: BUSINESS_ROOT_NAME = "WORKSPACE"
+BUSINESS_ROOT = ROOT / BUSINESS_ROOT_NAME
+BUSINESS_AREAS = ("00_Inbox", "01_Active", "02_Reference", "03_Completed", "04_Sources", "05_Archive")
 MIN_PY = (3, 11)
 
 def _venv_python():
@@ -61,8 +66,8 @@ def stage1(argv, rep):
                    "Install Git LFS from https://git-lfs.com, then run: git lfs install && git lfs pull")
     elif lfs_required:
         ptr = []
-        for area in ("01_Active", "02_Reference", "03_Completed", "04_Sources", "05_Archive"):
-            for f in (ROOT / area).rglob("*"):
+        for area in BUSINESS_AREAS[1:]:
+            for f in (BUSINESS_ROOT / area).rglob("*"):
                 if f.is_file() and f.suffix.lower() in (".docx", ".xlsx", ".xlsm", ".pptx", ".pdf", ".zip", ".7z", ".bundle"):
                     try:
                         if f.stat().st_size < 400 and f.read_bytes()[:24].startswith(b"version https://git-lfs"): ptr.append(str(f.relative_to(ROOT)))
@@ -75,7 +80,7 @@ def stage1(argv, rep):
         if (out_lp or "").strip().lower() != "true":
             longest = 0
             for area in ("05_Archive",):
-                for f in (ROOT / area).rglob("*"):
+                for f in (BUSINESS_ROOT / area).rglob("*"):
                     longest = max(longest, len(str(f)))
             if longest > 200:
                 rep.step(2, "windows long paths", "WARN",

@@ -10,7 +10,7 @@
 
 **Workspace → Command-center, agent → Deputy (միգրացիա + մեխանիկական contract)**
 - Կանոնական անունները՝ workspace **Command-center**, agent **Deputy — AI Chief of Staff for Sales & Operations** (մեկ աղբյուր՝ `.claude/policy/workspace_policy.json → identity`)։ Ֆիզիկական արմատը դեռ `Daily check` է (formerly). բաց Claude Code-ի cwd-ը վերանվանել անվտանգ չէ — մնացած քայլը՝ փակել Claude Code-ը, `Daily check` → `Command-center`, բացել նորից (memory-ն արդեն պատճենված է նոր project key-ի տակ)։
-- Նոր կառուցվածք՝ արմատում `Tasks.xlsx · Journal.md · Actions.md · CLAUDE.md · README.md`; `00_Inbox/Input.md` (մուտք + հում տեքստ), `01_Active/{Sales,Operations,People,Systems}`, `02_Reference/…`, `03_Completed`, `04_Sources/{Whatsapp,Screenshots,Imports}`, `05_Archive`, `.claude/{hooks,docs,policy,skills,tools,tests,state,audit}`։ Ամեն տեղափոխում՝ բովանդակությամբ որոշված անունով, լոգը՝ [.claude/docs/Migration-log-2026-09-10.md](.claude/docs/Migration-log-2026-09-10.md)։
+- Նոր կառուցվածք՝ արմատում `Tasks.xlsx · Journal.md · Actions.md · CLAUDE.md · README.md`; `00_Inbox/Input.md` (մուտք + հում տեքստ), `01_Active/{Sales,Operations,People,Systems}`, `02_Reference/…`, `03_Completed`, `04_Sources/{Whatsapp,Screenshots,Imports}`, `05_Archive`, `.claude/{hooks,docs,policy,skills,tools,tests,state,audit}`։ Ամեն տեղափոխում՝ բովանդակությամբ որոշված անունով, լոգը՝ [.claude/docs/Migration-log-2026-09-10.md](../.claude/docs/Migration-log-2026-09-10.md)։
 - Հին անուններ → նոր (formerly)՝ `Առաջադրանքներ.xlsx`→`Tasks.xlsx`, `ՕՐԱԳԻՐ.md`→`Journal.md`, `ԱՆԵԼԻՔՆԵՐ.md`→`Actions.md`, `03_Ավարտված/Հաստիքացուցակ_…`→`02_Reference/People/Staffing-plan-2026-09-07.xlsx`, `01_Ընթացիկ/…Billing_Roadmap_v2…`→`01_Active/Systems/Billing-roadmap-v2-2026-09-07.docx`, `Վաճառքի կարճաժամկետ ռազմավարություն.docx`→`01_Active/Sales/Sales-strategy-2026-09-09.docx`, `save-list (2).xlsx`→`01_Active/Sales/Churn-save-list-2026-09-09.xlsx` (churn-ի save list է, «(2)»-ը ներբեռնման կրկնօրինակ էր), `WhatsApp Image…jpeg`→`04_Sources/Screenshots/Churn-risk-signals-2026-09-09.jpeg`, `04_WhatsApp/Բնօրինակներ`→`04_Sources/Whatsapp/Gadukyan-2026-09-09[-afternoon]`, `04_WhatsApp/գործիքներ/*.py`→`.claude/tools/*.py` (անգլերեն տեխնիկական անուններ ըստ գործառույթի), `04_WhatsApp/ՕԳՆԱԿԱՆ_*`→`.claude/docs/Role.md`, `Job-description.md`, `02_Արխիվ`→`05_Archive/Drafts-2026-09-09`։
 - Հարկադրանք՝ `workspace_policy.json` (կանոնական contract + identity) · `validate_workspace.py` (SessionStart, release, CLI) · `hooks/workspace_guard.py` (PreToolUse deny + PostToolUse ամբողջ ծառի ստուգում) · `tests/test_workspace.py`։
 
@@ -37,7 +37,7 @@
 - `save-list (2).xlsx` և churn-ի սիգնալների նկարը դրված են `01_Ընթացիկ/`-ում։
 
 **Դերս ամրագրվեց + մուտքի պանակ**
-- Ես դարձա Գև-ի գործառնական օգնականը՝ **ամեն ինչի** մասով, ոչ միայն WhatsApp։ Դերի քարտ՝ [.claude/docs/Role.md](.claude/docs/Role.md)։
+- Ես դարձա Գև-ի գործառնական օգնականը՝ **ամեն ինչի** մասով, ոչ միայն WhatsApp։ Դերի քարտ՝ [.claude/docs/Role.md](../.claude/docs/Role.md)։
 - Ստեղծվեց `00_ԳՑԻՐ_ԱՅՍՏԵՂ/`՝ մուտքի սեղան։ Գև-ը ամեն ինչ գցում է այնտեղ, ես տանում եմ ճիշտ տեղը, վերանվանում, գրանցում այստեղ։
 
 **Skill System — կառուցվեց ու ապացուցվեց**
@@ -63,7 +63,7 @@
 **Ֆոլդըրը դասավորվեց**
 - `01_Ընթացիկ/` · `02_Արխիվ/` · `03_Ավարտված/` · `04_WhatsApp/`, արմատը՝ մուտքի տեղ։
 - Ֆայլերի անվանման կանոն՝ `Անուն_vՏարբերակ_ՏՏՏՏ-ԱԱ-ՕՕ`։
-- Ավելացվեցին [README.md](README.md), սույն օրագիրը, [Actions.md](Actions.md)։
+- Ավելացվեցին [README.md](../README.md), սույն օրագիրը, [Actions.md](Actions.md)։
 - **Հաստիքացուցակը** հայտարարվեց վերջնական և հաստատված → `03_Ավարտված/`։ Այսուհետ հենակետն է։
 
 **Առաջադրանքների համակարգ**

@@ -1,14 +1,14 @@
 {
  "manifest_version": "1.0",
- "policy_version": "1.7.0",
+ "policy_version": "1.8.0",
  "workspace": "Command-center",
  "durable_dirs": [
-  "00_Inbox",
-  "01_Active",
-  "02_Reference",
-  "03_Completed",
-  "04_Sources",
-  "05_Archive",
+  "WORKSPACE/00_Inbox",
+  "WORKSPACE/01_Active",
+  "WORKSPACE/02_Reference",
+  "WORKSPACE/03_Completed",
+  "WORKSPACE/04_Sources",
+  "WORKSPACE/05_Archive",
   ".claude/business",
   ".claude/docs",
   ".claude/hooks",
@@ -24,12 +24,12 @@
  "durable_root_files": [
   "CLAUDE.md",
   "README.md",
-  "Tasks.xlsx",
-  "Journal.md",
-  "Actions.md",
   "bootstrap.py",
   ".gitignore",
-  ".gitattributes"
+  ".gitattributes",
+  "WORKSPACE/Tasks.xlsx",
+  "WORKSPACE/Journal.md",
+  "WORKSPACE/Actions.md"
  ],
  "regenerated_globs": [
   ".claude/business/*.json",
@@ -247,6 +247,14 @@
    "classification": "INTERNAL"
   },
   {
+   "path": ".claude/policy/scope.py",
+   "kind": "file",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (HARD SCOPE LOCK machinery — the rule is only real if it exists)",
+   "classification": "INTERNAL"
+  },
+  {
    "path": ".claude/policy/workspace_tree_manifest.json",
    "kind": "file",
    "required": true,
@@ -399,6 +407,14 @@
    "classification": "INTERNAL"
   },
   {
+   "path": ".claude/tests/test_scope.py",
+   "kind": "file",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (HARD SCOPE LOCK machinery — the rule is only real if it exists)",
+   "classification": "INTERNAL"
+  },
+  {
    "path": ".claude/tools",
    "kind": "directory",
    "required": true,
@@ -463,172 +479,12 @@
    "classification": "PUBLIC"
   },
   {
-   "path": "00_Inbox",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep keeps empty directories alive)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "00_Inbox/Input.md",
-   "kind": "file",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "01_Active",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep keeps empty directories alive)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "01_Active/Operations",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "01_Active/People",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "01_Active/Sales",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "01_Active/Systems",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "02_Reference",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep keeps empty directories alive)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "02_Reference/Operations",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "02_Reference/People",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "02_Reference/Sales",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "02_Reference/Systems",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "03_Completed",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep keeps empty directories alive)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "04_Sources",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep keeps empty directories alive)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "04_Sources/Imports",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "04_Sources/Screenshots",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "04_Sources/Whatsapp",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "05_Archive",
-   "kind": "directory",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone (.gitkeep keeps empty directories alive)",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "Actions.md",
-   "kind": "file",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone",
-   "classification": "CONFIDENTIAL"
-  },
-  {
    "path": "CLAUDE.md",
    "kind": "file",
    "required": true,
    "durability": "VERSION_DIRECTLY",
    "restore": "git clone",
    "classification": "INTERNAL"
-  },
-  {
-   "path": "Journal.md",
-   "kind": "file",
-   "required": true,
-   "durability": "VERSION_DIRECTLY",
-   "restore": "git clone",
-   "classification": "CONFIDENTIAL"
   },
   {
    "path": "README.md",
@@ -639,7 +495,175 @@
    "classification": "INTERNAL"
   },
   {
-   "path": "Tasks.xlsx",
+   "path": "WORKSPACE",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep keeps empty directories alive)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/00_Inbox",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep keeps empty directories alive)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/00_Inbox/Input.md",
+   "kind": "file",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/01_Active",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep keeps empty directories alive)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/01_Active/Operations",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/01_Active/People",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/01_Active/Sales",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/01_Active/Systems",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/02_Reference",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep keeps empty directories alive)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/02_Reference/Operations",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/02_Reference/People",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/02_Reference/Sales",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/02_Reference/Systems",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/03_Completed",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep keeps empty directories alive)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/04_Sources",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep keeps empty directories alive)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/04_Sources/Imports",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/04_Sources/Screenshots",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/04_Sources/Whatsapp",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/05_Archive",
+   "kind": "directory",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone (.gitkeep keeps empty directories alive)",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/Actions.md",
+   "kind": "file",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/Journal.md",
+   "kind": "file",
+   "required": true,
+   "durability": "VERSION_DIRECTLY",
+   "restore": "git clone",
+   "classification": "CONFIDENTIAL"
+  },
+  {
+   "path": "WORKSPACE/Tasks.xlsx",
    "kind": "file",
    "required": true,
    "durability": "VERSION_DIRECTLY",

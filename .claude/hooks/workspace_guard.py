@@ -85,12 +85,12 @@ def on_pretool(data, vw, pol):
             if probs: deny("WORKSPACE POLICY: " + " | ".join(probs) + "  → choose a compliant location/name (see .claude/policy/workspace_policy.json).")
         out(None, 0)
     cmd = str(inp.get("command", ""))
-    required = set(pol["root"]["required_files"]) | {"00_Inbox/Input.md"} | {f"{a}/{f}" for a, d in pol["directories"].items() for f in d.get("required_files", [])}
+    required = set(pol["root"]["required_files"]) | {c for c, sp in pol["canonical_files"].items() if sp.get("single_canonical")} | {f"{a}/{f}" for a, d in pol["directories"].items() for f in d.get("required_files", [])}
     for d in bash_deletes(cmd):
         if _inside(d):
             try: rel = pathlib.Path(d).resolve().relative_to(ROOT.resolve()).as_posix()
             except ValueError: continue
-            if rel in required or any(rel.startswith(a) for a in ("00_Inbox/Input.md",)): deny(f"WORKSPACE POLICY: {rel} is a required canonical file; deleting it is forbidden.")
+            if rel in required: deny(f"WORKSPACE POLICY: {rel} is a required canonical file; deleting it is forbidden.")
     problems = []
     for target, is_dir in bash_targets(cmd):
         if not _inside(target): continue

@@ -21,6 +21,12 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE.parent / "runtime")); import python_runtime; python_runtime.ensure()
 sys.path.insert(0, str(HERE)); sys.path.insert(0, str(HERE.parent / "policy"))
 import bm_schema, bm_sources, bm_company, bm_processes, bm_kpis, bm_targets, bm_playbooks, bm_governance
+import paths                                                     # ONE business-root resolver (workspace_policy.json -> business_root)
+
+def _src_path(root, s):
+    """Absolute path of a declared source. bm_sources.py states it business-relative (01_Active/..., Tasks.xlsx); the business
+    root is resolved here, so moving Gev's workspace never touches the model authoring."""
+    return paths.resolve(root, s["path"])
 
 CONF = set(bm_schema.CONF)
 OVERLAY_DIR = HERE / "overlay"
@@ -30,7 +36,7 @@ class BuildError(Exception):
 
 # ───────────────────────── stage 1: sources ─────────────────────────
 def check_sources(root=ROOT, allow_missing=False):
-    missing = [s["source_id"] for s in bm_sources.SOURCES if s["currency"] == "CURRENT" and not (root / s["path"]).exists()]
+    missing = [s["source_id"] for s in bm_sources.SOURCES if s["currency"] == "CURRENT" and not _src_path(root, s).exists()]
     if missing and not allow_missing: raise BuildError("SOURCE_MISSING", missing)
     return missing
 
@@ -71,7 +77,7 @@ def snapshot(root=ROOT):
     structure sha256 plus the structure spec and live integration, never a content hash — row-level live data does not bind the model."""
     snap = {}
     for s in bm_sources.SOURCES:
-        p = root / s["path"]; base = {"path": s["path"], "currency": s["currency"], "authority": s["authority"], "scope": bm_sources.scope(s)}
+        p = _src_path(root, s); base = {"path": s["path"], "currency": s["currency"], "authority": s["authority"], "scope": bm_sources.scope(s)}
         if bm_sources.kind(s) == "LIVE_REGISTER": base.update(source_kind="LIVE_REGISTER", live_integration=s.get("live_integration"), structure=dict(s.get("structure") or {}))
         if p.exists():
             fp = source_fingerprint(s, p)
@@ -124,7 +130,7 @@ def invariant_checks(root=ROOT, invariants=None):
     for sid, rules in inv.items():
         s = src.get(sid)
         if not s or s["currency"] != "CURRENT": continue
-        path = root / s["path"]
+        path = _src_path(root, s)
         if not path.exists(): p.append(f"{sid}: SOURCE_MISSING for invariants"); continue
         for mid in rules.get("model_has", []):
             if mid not in ids: p.append(f"{sid}: model lacks expected primitive {mid}")
@@ -162,7 +168,7 @@ def extraction_checks(root=ROOT):
     # S01: KPI sheet weights per role must equal bm_kpis.ROLE_KPIS
     try:
         import openpyxl
-        wb = openpyxl.load_workbook(root / "02_Reference/People/Staffing-plan-2026-09-07.xlsx", data_only=True, read_only=True)
+        wb = openpyxl.load_workbook(paths.resolve(root, "02_Reference/People/Staffing-plan-2026-09-07.xlsx"), data_only=True, read_only=True)
         need = {"Ամփոփ պատկեր", "Կառուցվածք և աշխատավարձ", "Մոդելներ և պարտադիր վճարներ", "KPI"}
         if not need <= set(wb.sheetnames): p.append(f"S01 sheets changed: {wb.sheetnames}")
         else:
@@ -183,7 +189,7 @@ def extraction_checks(root=ROOT):
     except Exception as e: p.append(f"S01 extraction error: {type(e).__name__}: {e}")
     # S02: JD card titles (Heading 2 of each card) must match role titles for codes 1.1–4.2
     try:
-        text, heads = _docx_text(root / "01_Active/People/Job-descriptions-v1.1-2026-09-05.docx")
+        text, heads = _docx_text(paths.resolve(root, "01_Active/People/Job-descriptions-v1.1-2026-09-05.docx"))
         model_titles = [r["title"] for r in bm_company.ROLES if re.match(r"^\d+\.\d+$", r["code"])]
         cards = [h for h in heads if h in model_titles]
         if len(cards) != len(model_titles): p.append(f"S02 JD cards matching the model {len(cards)} vs model roles {len(model_titles)}")
@@ -194,7 +200,7 @@ def extraction_checks(root=ROOT):
     # S05: only aggregates leave the file — verify the file shape, never copy rows
     try:
         import openpyxl
-        wb = openpyxl.load_workbook(root / "01_Active/Sales/Churn-save-list-2026-09-09.xlsx", read_only=True)
+        wb = openpyxl.load_workbook(paths.resolve(root, "01_Active/Sales/Churn-save-list-2026-09-09.xlsx"), read_only=True)
         if "Save list" not in wb.sheetnames or "Provenance" not in wb.sheetnames: p.append(f"S05 sheets changed: {wb.sheetnames}")
         wb.close()
     except FileNotFoundError: p.append("S05 missing for extraction check")

@@ -13,9 +13,10 @@ HouseNet ՍՊԸ · ամեն աշխատանքային օրը սկսվում է ա
 
 | Ֆայլ | Ինչի համար |
 |:---|:---|
-| **[Tasks.xlsx](Tasks.xlsx)** | 🎯 Միակ կենդանի առաջադրանքների ռեեստրը։ Գև-ը կարգավիճակ փոխում է ուղիղ այստեղ. Deputy-ն կարդում է այն ամեն սեսիա։ |
-| **[Journal.md](Journal.md)** | Ինչ արվեց ամեն օր։ Նոր օրը՝ վերևում։ Ամեն տեղափոխում/վերանվանում գրանցվում է այստեղ։ |
-| **[Actions.md](Actions.md)** | Ներքին անելիքներ՝ փաստաթղթերի և համակարգի վրա։ |
+| **[WORKSPACE/](WORKSPACE/)** | 🏠 **ԳԵՎ-Ի ԱՇԽԱՏԱՆՔԱՅԻՆ ՊԱՆԱԿԸ** — ամեն օր բացվում է միայն սա։ Ներսում՝ վեց տիրույթ և երեք կենդանի ռեեստր։ Ոչ մի տեխնիկական ֆայլ այստեղ չի հայտնվում։ |
+| **[Tasks.xlsx](WORKSPACE/Tasks.xlsx)** | 🎯 Միակ կենդանի առաջադրանքների ռեեստրը։ Գև-ը կարգավիճակ փոխում է ուղիղ այստեղ. Deputy-ն կարդում է այն ամեն սեսիա։ |
+| **[Journal.md](WORKSPACE/Journal.md)** | Ինչ արվեց ամեն օր։ Նոր օրը՝ վերևում։ Ամեն տեղափոխում/վերանվանում գրանցվում է այստեղ։ |
+| **[Actions.md](WORKSPACE/Actions.md)** | Ներքին անելիքներ՝ փաստաթղթերի և համակարգի վրա։ |
 | **[CLAUDE.md](CLAUDE.md)** | Deputy-ի վարքի կանոնագիրը (ուղեցույց, ոչ հարկադրանք)։ |
 | **README.md** | Այս ֆայլը։ |
 
@@ -23,12 +24,12 @@ HouseNet ՍՊԸ · ամեն աշխատանքային օրը սկսվում է ա
 
 | Պանակ | Պատասխանատվություն |
 |:---|:---|
-| **[00_Inbox/](00_Inbox/)** | 📥 Մուտքի սեղան։ Ամեն ինչ, ինչ չգիտես ուր դնել՝ գցի այստեղ. Deputy-ն դասավորում է։ Կայուն վիճակ՝ դատարկ, բացի [Input.md](00_Inbox/Input.md)-ից (հում տեքստի տեղը)։ |
-| **[01_Active/](01_Active/)** | Ընթացիկ գործ՝ `Sales/` · `Operations/` · `People/` · `Systems/`։ Միայն այն, ինչ հիմա մշակվում, ստուգվում կամ կատարվում է։ |
-| **[02_Reference/](02_Reference/)** | Հաստատված, **դեռ գործող** ճշմարտություն (օր.՝ Staffing-plan)։ Նույն 4 ենթապանակները։ |
-| **[03_Completed/](03_Completed/)** | Ավարտված deliverable-ներ, որոնք այլևս ընթացիկ ճշմարտություն չեն։ |
-| **[04_Sources/](04_Sources/)** | Հում ապացույց՝ `Whatsapp/` (export-ներ), `Screenshots/`, `Imports/`։ Ոչ մի կոդ, ոչ մի մշակված deliverable։ |
-| **[05_Archive/](05_Archive/)** | Հնացած տարբերակներ, սևագրեր, հին implementation։ Պատմություն է, ոչ ճշմարտություն։ Ոչինչ չի ջնջվում։ |
+| **[00_Inbox/](WORKSPACE/00_Inbox/)** | 📥 Մուտքի սեղան։ Ամեն ինչ, ինչ չգիտես ուր դնել՝ գցի այստեղ. Deputy-ն դասավորում է։ Կայուն վիճակ՝ դատարկ, բացի [Input.md](WORKSPACE/00_Inbox/Input.md)-ից (հում տեքստի տեղը)։ |
+| **[01_Active/](WORKSPACE/01_Active/)** | Ընթացիկ գործ՝ `Sales/` · `Operations/` · `People/` · `Systems/`։ Միայն այն, ինչ հիմա մշակվում, ստուգվում կամ կատարվում է։ |
+| **[02_Reference/](WORKSPACE/02_Reference/)** | Հաստատված, **դեռ գործող** ճշմարտություն (օր.՝ Staffing-plan)։ Նույն 4 ենթապանակները։ |
+| **[03_Completed/](WORKSPACE/03_Completed/)** | Ավարտված deliverable-ներ, որոնք այլևս ընթացիկ ճշմարտություն չեն։ |
+| **[04_Sources/](WORKSPACE/04_Sources/)** | Հում ապացույց՝ `Whatsapp/` (export-ներ), `Screenshots/`, `Imports/`։ Ոչ մի կոդ, ոչ մի մշակված deliverable։ |
+| **[05_Archive/](WORKSPACE/05_Archive/)** | Հնացած տարբերակներ, սևագրեր, հին implementation։ Պատմություն է, ոչ ճշմարտություն։ Ոչինչ չի ջնջվում։ |
 | **`.claude/`** | Deputy runtime՝ `hooks/` (brief, skill gate, workspace guard) · `docs/` (Role, Job-description, audits) · `policy/` (contract + validator) · `skills/` (Skill System) · `tools/` (helper programs) · `tests/` · `state/` · `audit/`։ |
 
 ## Անվանման ստանդարտ
@@ -90,7 +91,7 @@ python bootstrap.py            # կամ py -3 bootstrap.py — idempotent, ոչ�
 
 `Tasks.xlsx`-ը **LIVE OPERATIONAL SOURCE** է (S09 · `source_kind: LIVE_REGISTER` · `fingerprint_scope: STRUCTURE`)՝ մոդելը կապված է միայն նրա կառուցվածքին (թերթ + header բլոկ), տողերը կարդացվում են live՝ INT-TASKS-ով (retrieved_at/freshness ամեն ընթերցման)։ Տողի փոփոխությունը core fingerprint-ը չի փոխում, STALE_MODEL չի առաջացնում, rebuild/certification/release չի պահանջում։ Drift-ը ամեն սեսիա երևում է Daily Brief-ում (`🔄 GitHub sync ✓` կամ `ՉԻ ՀԱՄԱԺԱՄԱՆԱԿԵՑՎԱԾ — SYNC_REQUIRED/RELEASE_REQUIRED/UNCLASSIFIED`), `tree_manifest.py drift`-ով՝ ձեռքով։
 
-Կանոնական ծառի պայմանագիր՝ `.claude/policy/workspace_tree_manifest.json` (գեներացվում է policy-ից `tree_manifest.py build --write`-ով, validator-ը ստուգում է համապատասխանությունը և ֆիզիկական գոյությունը), checksum-ներ՝ `.claude/policy/durable_checksums.json`։ Parity՝ `tree_manifest.py snapshot` աղբյուրում և վերականգնվածում → `tree_manifest.py parity a b`։ Scanner-ի սեմանտիկա (2.0)՝ **արգելում է միայն RESTRICTED** (credential, token, գաղտնաբառ, private key, բանալի, connection string); բիզնես տեղեկատվությունը (անուններ, աշխատավարձ, փաստաթղթեր) CONFIDENTIAL awareness է՝ versioned Գև-ի որոշմամբ։ `.secure/`՝ գաղտնագրված artifact-ի պանակն է։ Ժամանակավոր staging-ի պանակ այլևս չկա՝ 2026-09-14-ին ամբողջ նյութը դասակարգվեց տաքսոնոմիայում ([migration manifest](05_Archive/Migration-2026-09-14/Migration-manifest-2026-09-14.md))։
+Կանոնական ծառի պայմանագիր՝ `.claude/policy/workspace_tree_manifest.json` (գեներացվում է policy-ից `tree_manifest.py build --write`-ով, validator-ը ստուգում է համապատասխանությունը և ֆիզիկական գոյությունը), checksum-ներ՝ `.claude/policy/durable_checksums.json`։ Parity՝ `tree_manifest.py snapshot` աղբյուրում և վերականգնվածում → `tree_manifest.py parity a b`։ Scanner-ի սեմանտիկա (2.0)՝ **արգելում է միայն RESTRICTED** (credential, token, գաղտնաբառ, private key, բանալի, connection string); բիզնես տեղեկատվությունը (անուններ, աշխատավարձ, փաստաթղթեր) CONFIDENTIAL awareness է՝ versioned Գև-ի որոշմամբ։ `.secure/`՝ գաղտնագրված artifact-ի պանակն է։ Ժամանակավոր staging-ի պանակ այլևս չկա՝ 2026-09-14-ին ամբողջ նյութը դասակարգվեց տաքսոնոմիայում ([migration manifest](WORKSPACE/05_Archive/Migration-2026-09-14/Migration-manifest-2026-09-14.md))։
 
 Business Operating Model՝ `.claude/business/`, երկու շերտ. **CORE** (INTERNAL, versioned)՝ `bm_*.py` authoring, `bm_schema.py`, `bm_targets.py`, `build_business_model.py`, `certify_business.py` — դերեր առանց վարձատրության, գործընթացներ, ownership ըստ ԴԵՐԻ, KPI-ներ, վերահսկվող targets/thresholds, playbooks, routines, gaps, աղբյուրների metadata, մարդիկ միայն `@P` token-ներով; **SENSITIVE OVERLAY** (CONFIDENTIAL, միայն լոկալ)՝ `overlay/ov_*.py` → `overlay.json` (անուն ↔ token, դեր ↔ մարդ, աշխատավարձ, առևտրային թվեր, ապացույցներ)։ Գեներացված `*.json`/`Business-model.md`/`certification.json`՝ լոկալ։ Pipeline՝ sources → extract → validate → core → overlay → fingerprint → certify (schema 2.0, model_version, source snapshot; STALE_MODEL/SOURCE_MISSING հայտնաբերում)։ Սահմանը մեխանիկական է՝ `.claude/policy/data_classification.json` (PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED) + `sensitive_scan.py` (pre-commit/pre-push hooks, validator, certification)։ Engine-ը ամեն governed գործարկման մեջ ներարկում է business context (playbook, KPI, process, owner ROLE → CURRENT PERSON միայն CONFIRMED assignment-ով, sources, model identity, gap codes՝ OWNER_UNKNOWN · KPI_DEFINITION_MISSING · PROCESS_UNDEFINED · TARGET_UNKNOWN · APPROVAL_RULE_UNKNOWN · SOURCE_CONFLICT · STALE_MODEL · SOURCE_CHANGED · SOURCE_MISSING · BUSINESS_CONTEXT_MISSING)։ Չատից եկած գիտելիքը միայն OBSERVATION է (state store), core-ը չի փոխում. promotion՝ OBSERVATION → PROPOSED → CONFIRMED → APPROVED → SUPERSEDED։ Private Git-ը secrets database չէ. սահմանը գործում է անկախ repo-ի visibility-ից։
 
@@ -190,4 +191,18 @@ python bootstrap.py                    # runtime, durable state, credentials, ce
 
 **Git-ից դուրս մնում է միայն այն, ինչը վերարտադրելի է կամ գաղտնիք է.** `.venv`, `__pycache__`, մեքենայական աղբ, ephemeral runtime state (canonical durable export-ը՝ `.claude/state/durable/`, versioned է), վերարտադրվող business-model և integration JSON-ները, և plaintext credential-ները։ Վերջիններս ապրում են միայն `.secure/credentials.gpg`-ում, բանալին՝ repo-ից դուրս։
 
-Ամբողջ 2026-09-14 վերակազմակերպումը՝ ո՞ր ֆայլը որտեղից ուր գնաց, ի՞նչ hash-ով և ինչո՞ւ, գրված է [05_Archive/Migration-2026-09-14/Migration-manifest-2026-09-14.md](05_Archive/Migration-2026-09-14/Migration-manifest-2026-09-14.md)-ում։
+Ամբողջ 2026-09-14 վերակազմակերպումը՝ ո՞ր ֆայլը որտեղից ուր գնաց, ի՞նչ hash-ով և ինչո՞ւ, գրված է [05_Archive/Migration-2026-09-14/Migration-manifest-2026-09-14.md](WORKSPACE/05_Archive/Migration-2026-09-14/Migration-manifest-2026-09-14.md)-ում։
+
+---
+
+## Երկու արմատ — մի՛ խառնիր
+
+**`WORKSPACE/`** — Գև-ի բիզնես արմատը. `00_Inbox · 01_Active · 02_Reference · 03_Completed · 04_Sources · 05_Archive` + `Tasks.xlsx · Journal.md · Actions.md`։ Այն ամենը, ինչ Գև-ը բացում, կարդում, խմբագրում կամ որպես բիզնես նյութ օգտագործում է։
+
+**Repository root** — Deputy-ի տեխնիկական պատյանը. `.claude/` (engine), `.secure/` (գաղտնագրված վերականգնում), `.venv/` (վերագեներացվող), `bootstrap.py`, `CLAUDE.md`, `README.md`, `.gitignore`, `.gitattributes`։ Գև-ը այստեղ մտնելու կարիք չունի։
+
+Բիզնես արմատի անունը հայտարարված է **մեկ տեղում**՝ `.claude/policy/workspace_policy.json → business_root`, և լուծվում է `.claude/policy/paths.py`-ով։ Validator-ը, guard-ը, tree manifest-ը, sync-ը, skill-երը, ադապտերները և թեստերը բոլորն անցնում են այդ մեկ resolver-ով, այնպես որ երկու արմատը այլևս չեն կարող միմյանց մեջ մտնել։
+
+## HARD SCOPE LOCK
+
+Deputy-ն փոխում է **միայն այն, ինչ Գև-ի ընթացիկ հանձնարարությունն է պահանջում**։ Ճանապարհին նկատած սխալը, ավելի գեղեցիկ ճարտարապետությունը, «մի բան էլ մաքրենք»-ը՝ **REPORT ONLY**։ Կանոնը՝ `workspace_policy.json → scope_lock`, շարժիչը՝ `.claude/policy/scope.py`, պահվում է gate ticket-ի վրա (`ticket['scope']`)։ Default-ը **DENY** է. առանց հաստատված Scope Contract-ի ոչ մի ֆայլ չի փոխվում։ Երեք դարպաս՝ **mutation gate** (`gate.py` PreToolUse), **action runtime** (`actions.py prepare` → `OUT_OF_SCOPE`) և **scope-diff gate** (`scope.py --staged`, git pre-commit hook-ում) — մեկ scope-ից դուրս ուղի = HARD FAIL, ոչ commit, ոչ push, ոչ PR։ Deputy-ն ինքն իրեն scope ընդլայնել չի կարող. ենթահամակարգը մտնում է պայմանագիր միայն **Գև-ի սեփական հաղորդագրության** ապացույցով։

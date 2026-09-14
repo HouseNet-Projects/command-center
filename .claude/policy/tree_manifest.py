@@ -13,15 +13,16 @@ files and a parity snapshot used to compare the source workspace with a clean-ma
 Durability classes: VERSION_DIRECTLY · VERSION_ENCRYPTED · REGENERATE · MACHINE_LOCAL · EPHEMERAL."""
 import sys, os, json, hashlib, pathlib, datetime, fnmatch
 HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE)); import paths        # ONE business-root resolver (workspace_policy.json -> business_root)
 ROOT = HERE.parent.parent
 POLICY = HERE / "workspace_policy.json"
 MANIFEST = HERE / "workspace_tree_manifest.json"
 CHECKSUMS = HERE / "durable_checksums.json"
 MANIFEST_VERSION = "1.0"
 
-DURABLE_DIRS = ("00_Inbox", "01_Active", "02_Reference", "03_Completed", "04_Sources", "05_Archive", ".claude/business", ".claude/docs", ".claude/hooks", ".claude/policy",
+DURABLE_DIRS = paths.areas() + (".claude/business", ".claude/docs", ".claude/hooks", ".claude/policy",
                 ".claude/runtime", ".claude/skills", ".claude/tools", ".claude/tests", ".claude/integrations", ".claude/state/durable", ".secure")
-DURABLE_ROOT_FILES = ("CLAUDE.md", "README.md", "Tasks.xlsx", "Journal.md", "Actions.md", "bootstrap.py", ".gitignore", ".gitattributes")
+DURABLE_ROOT_FILES = ("CLAUDE.md", "README.md", "bootstrap.py", ".gitignore", ".gitattributes") + paths.registers()
 REGENERATED_GLOBS = (".claude/business/*.json", ".claude/business/Business-model.md", ".claude/integrations/certification.json", "**/__pycache__/**", ".venv/**")
 EPHEMERAL_GLOBS = (".claude/state/*", ".claude/audit/**", "*.lock", "*.tmp", "~$*", "desktop.ini", ".claude/settings.local.json")
 SKIP_WALK = {".git", ".venv", "__pycache__"}
@@ -36,6 +37,11 @@ def _churn(rel):
     return any(fnmatch.fnmatch(r, g) for g in RELEASE_CHURN)
 
 def load_policy(p=POLICY): return json.loads(pathlib.Path(p).read_text(encoding="utf-8"))
+
+def _is_business(rel, pol=None):
+    """True for a path inside Gev's business workspace, wherever the declared business root puts it."""
+    b = paths.to_business(rel, pol)
+    return b is not None and (b == "" or b.split("/")[0] in paths.AREAS or b in paths.REGISTERS)
 
 def _cls_for(rel):
     r = rel.replace("\\", "/")
@@ -53,11 +59,11 @@ def build(pol=None):
         e = {"path": path, "kind": kind, "required": bool(required), "durability": durability, "restore": restore, "classification": classification}
         if note: e["note"] = note
         entries.append(e)
-    for f in rt["required_files"]:
-        add(f, "file", True, "VERSION_DIRECTLY", "git clone", "CONFIDENTIAL" if f in ("Tasks.xlsx", "Journal.md", "Actions.md") else "INTERNAL")
+    for f in list(rt["required_files"]) + list(paths.registers(pol)):
+        add(f, "file", True, "VERSION_DIRECTLY", "git clone", "CONFIDENTIAL" if pathlib.PurePosixPath(f).name in paths.REGISTERS else "INTERNAL")
     for f in (".gitignore", ".gitattributes"): add(f, "file", True, "VERSION_DIRECTLY", "git clone")
-    for d in rt["required_dirs"]:
-        add(d, "directory", True, "VERSION_DIRECTLY", "git clone (.gitkeep keeps empty directories alive)", "CONFIDENTIAL" if d[:2].isdigit() else "INTERNAL")
+    for d in list(rt["required_dirs"]) + list(paths.areas(pol)):
+        add(d, "directory", True, "VERSION_DIRECTLY", "git clone (.gitkeep keeps empty directories alive)", "CONFIDENTIAL" if _is_business(d, pol) else "INTERNAL")
     add(".claude/business", "directory", True, "VERSION_DIRECTLY", "git clone (bm_*.py + overlay authoring; generated json regenerated)", "CONFIDENTIAL")
     add(".claude/integrations", "directory", True, "VERSION_DIRECTLY", "git clone (adapters, registry, fixed reader)", "INTERNAL")
     add(".venv", "directory", False, "REGENERATE", "bootstrap.py → python_runtime.py bootstrap (requirements.lock)", "PUBLIC")
@@ -65,16 +71,18 @@ def build(pol=None):
     for area, dc in pol["directories"].items():
         if area not in [e["path"] for e in entries] and dc.get("required", True):
             add(area, "directory", True, "REGENERATE" if area in (".claude/state", ".claude/audit") else "VERSION_DIRECTLY",
-                "bootstrap.py creates" if area in (".claude/state", ".claude/audit") else "git clone (.gitkeep)", "CONFIDENTIAL" if area[:2].isdigit() or "business" in area or "state" in area or "audit" in area else "INTERNAL")
+                "bootstrap.py creates" if area in (".claude/state", ".claude/audit") else "git clone (.gitkeep)", "CONFIDENTIAL" if _is_business(area, pol) or "business" in area or "state" in area or "audit" in area else "INTERNAL")
         for sub in dc.get("fixed_subdirs", []):
             p = f"{area}/{sub}"
             if p not in [e["path"] for e in entries] and p not in pol["directories"]:
-                add(p, "directory", True, "VERSION_DIRECTLY", "git clone (.gitkeep)", "CONFIDENTIAL" if area[:2].isdigit() else "INTERNAL")
+                add(p, "directory", True, "VERSION_DIRECTLY", "git clone (.gitkeep)", "CONFIDENTIAL" if _is_business(area, pol) else "INTERNAL")
         for sub in dc.get("optional_subdirs", []):
             p = f"{area}/{sub}"
             if p not in [e["path"] for e in entries] and p not in pol["directories"]: add(p, "directory", False, "VERSION_DIRECTLY", "git clone", "INTERNAL")
-    add("00_Inbox/Input.md", "file", True, "VERSION_DIRECTLY", "git clone", "CONFIDENTIAL")
+    add(paths.to_repo("00_Inbox/Input.md", pol), "file", True, "VERSION_DIRECTLY", "git clone", "CONFIDENTIAL")
     add(".claude/settings.json", "file", True, "VERSION_DIRECTLY", "git clone")
+    for f in (pol.get("scope_lock") or {}).get("enforcement_files", []):
+        add(f, "file", True, "VERSION_DIRECTLY", "git clone (HARD SCOPE LOCK machinery — the rule is only real if it exists)")
     add(".claude/runtime/requirements.txt", "file", True, "VERSION_DIRECTLY", "git clone"); add(".claude/runtime/requirements.lock", "file", True, "VERSION_DIRECTLY", "git clone")
     add(".claude/skills/registry.json", "file", True, "VERSION_DIRECTLY", "git clone; rebuilt by skill.py release")
     add(".claude/policy/workspace_tree_manifest.json", "file", True, "VERSION_DIRECTLY", "git clone; regenerated by tree_manifest.py build (must equal the derived manifest)")
@@ -188,7 +196,7 @@ def parity(src, dst):
 DRIFT_STATES = ("CLEAN", "SYNC_REQUIRED", "RELEASE_REQUIRED", "UNCLASSIFIED")
 SYNC_CLASSES = ("LIVE_DATA", "DOCUMENT", "DURABLE_STATE", "INTEGRITY_META")          # persisted by skill.py sync (data only)
 RELEASE_CLASSES = ("PRODUCT", "MODEL_SOURCE", "RELEASE_ARTIFACT")                   # only skill.py release may certify + persist these
-BUSINESS_DIRS = ("00_Inbox", "01_Active", "02_Reference", "03_Completed", "04_Sources", "05_Archive")
+BUSINESS_DIRS = paths.areas()
 
 def _git_out(args, root):
     import subprocess
@@ -209,8 +217,7 @@ def classify_path(rel, spec=None, model_sources=()):
     if any(r == d.strip("/") or r.startswith(d.strip("/") + "/") for d in spec["state_dirs"]): return "DURABLE_STATE"
     if r in {m.replace("\\", "/") for m in model_sources}: return "MODEL_SOURCE"
     if _churn(r): return "RELEASE_ARTIFACT"
-    top = r.split("/")[0]
-    if top in BUSINESS_DIRS: return "DOCUMENT"
+    if any(r == d or r.startswith(d + "/") for d in BUSINESS_DIRS): return "DOCUMENT"
     if r.startswith(".claude/") or r.startswith(".secure/") or r in DURABLE_ROOT_FILES or r in (".gitignore", ".gitattributes"): return "PRODUCT"
     return "UNKNOWN"
 
