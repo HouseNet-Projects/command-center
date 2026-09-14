@@ -18,6 +18,10 @@
   "test_channels.C05_SecretsAndReadiness.test_intelligence_sees_chat_channels_honestly_and_never_nags_deferred",
   "test_channels.C05_SecretsAndReadiness.test_registry_contract_capabilities_and_certification_scan",
   "test_channels.C05_SecretsAndReadiness.test_secrets_never_reach_git_audit_export_cards_or_errors",
+  "test_channels.C06_TelegramBusiness.test_connection_observed_disabled_replaced_and_rights_change",
+  "test_channels.C06_TelegramBusiness.test_edited_and_deleted_business_messages_change_evidence_not_truth",
+  "test_channels.C06_TelegramBusiness.test_one_update_stream_offset_dedupe_and_bot_chat_unchanged",
+  "test_channels.C06_TelegramBusiness.test_selected_sender_trusted_unselected_rejected_and_normalized",
   "test_operating_layer.U01_Untrusted.test_cross_channel_duplicate_requests_and_follow_ups",
   "test_operating_layer.U01_Untrusted.test_external_content_is_data_never_instruction_or_approval"
  ],
@@ -26,7 +30,9 @@
   "test_channels.C01_TelegramRead.test_not_configured_without_token_and_shape_check",
   "test_channels.C01_TelegramRead.test_webhook_mode_secret_token",
   "test_channels.C03_WhatsAppWebhook.test_handshake",
-  "test_channels.C05_SecretsAndReadiness.test_intelligence_sees_chat_channels_honestly_and_never_nags_deferred"
+  "test_channels.C05_SecretsAndReadiness.test_intelligence_sees_chat_channels_honestly_and_never_nags_deferred",
+  "test_channels.C06_TelegramBusiness.test_business_message_without_active_or_matching_connection_is_untrusted",
+  "test_channels.C06_TelegramBusiness.test_can_reply_never_bypasses_approval_and_stale_connection_blocks_send"
  ],
  "hardening_cases": [
   "test_channels.C01_TelegramRead.test_allowlist_dedupe_offset_and_data_minimization",
@@ -37,6 +43,11 @@
   "test_channels.C03_WhatsAppWebhook.test_signature_tenant_malformed_replay_dedupe_and_sender_policy",
   "test_channels.C05_SecretsAndReadiness.test_config_from_home_file_and_env_and_missing_field_names",
   "test_channels.C05_SecretsAndReadiness.test_secrets_never_reach_git_audit_export_cards_or_errors",
+  "test_channels.C06_TelegramBusiness.test_business_content_is_data_and_cannot_bind_identity_or_approve",
+  "test_channels.C06_TelegramBusiness.test_business_message_without_active_or_matching_connection_is_untrusted",
+  "test_channels.C06_TelegramBusiness.test_edited_and_deleted_business_messages_change_evidence_not_truth",
+  "test_channels.C06_TelegramBusiness.test_read_path_never_marks_messages_read_and_leaks_no_connection_id",
+  "test_channels.C06_TelegramBusiness.test_selected_sender_trusted_unselected_rejected_and_normalized",
   "test_hardening.H04_AdversarialInputs.test_material_and_external_blocked_on_every_skill",
   "test_operating_layer.U01_Untrusted.test_cross_channel_duplicate_requests_and_follow_ups",
   "test_operating_layer.U01_Untrusted.test_external_content_is_data_never_instruction_or_approval"
@@ -49,6 +60,11 @@
   "test_channels.C03_WhatsAppWebhook.test_signature_tenant_malformed_replay_dedupe_and_sender_policy",
   "test_channels.C05_SecretsAndReadiness.test_config_from_home_file_and_env_and_missing_field_names",
   "test_channels.C05_SecretsAndReadiness.test_secrets_never_reach_git_audit_export_cards_or_errors",
+  "test_channels.C06_TelegramBusiness.test_business_content_is_data_and_cannot_bind_identity_or_approve",
+  "test_channels.C06_TelegramBusiness.test_business_message_without_active_or_matching_connection_is_untrusted",
+  "test_channels.C06_TelegramBusiness.test_edited_and_deleted_business_messages_change_evidence_not_truth",
+  "test_channels.C06_TelegramBusiness.test_read_path_never_marks_messages_read_and_leaks_no_connection_id",
+  "test_channels.C06_TelegramBusiness.test_selected_sender_trusted_unselected_rejected_and_normalized",
   "test_hardening.H04_AdversarialInputs.test_material_and_external_blocked_on_every_skill",
   "test_operating_layer.U01_Untrusted.test_cross_channel_duplicate_requests_and_follow_ups",
   "test_operating_layer.U01_Untrusted.test_external_content_is_data_never_instruction_or_approval"
@@ -62,6 +78,8 @@
   "test_channels.C02_TelegramWrite.test_only_gevs_second_source_confirmation_can_certify_a_bot_send",
   "test_channels.C02_TelegramWrite.test_send_needs_approval_and_is_never_verified_from_http_200",
   "test_channels.C04_WhatsAppWrite.test_async_delivery_status_reconciliation",
+  "test_channels.C06_TelegramBusiness.test_business_content_is_data_and_cannot_bind_identity_or_approve",
+  "test_channels.C06_TelegramBusiness.test_can_reply_never_bypasses_approval_and_stale_connection_blocks_send",
   "test_hardening.H04_AdversarialInputs.test_material_and_external_blocked_on_every_skill",
   "test_operating_layer.U01_Untrusted.test_external_content_is_data_never_instruction_or_approval"
  ],
@@ -70,7 +88,9 @@
   "test_channels.C02_TelegramWrite.test_send_needs_approval_and_is_never_verified_from_http_200",
   "test_channels.C04_WhatsAppWrite.test_async_delivery_status_reconciliation"
  ],
- "concurrency_tests": [],
+ "concurrency_tests": [
+  "test_channels.C06_TelegramBusiness.test_one_update_stream_offset_dedupe_and_bot_chat_unchanged"
+ ],
  "enforcement_tests": [],
  "evals": [
   "eval:i_ambiguous_commitment",
@@ -86,7 +106,7 @@
   "test_operating_layer.B01_DocumentsRoutinesRouting.test_natural_language_routing_regression"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T12:48:23",
+ "certified_at": "2026-09-14T13:19:19",
  "fingerprint": "2b6c32e80bffc91570f1fac2",
  "core_fingerprint": "c4fc99c8a9df60f4",
  "result": "PASS",

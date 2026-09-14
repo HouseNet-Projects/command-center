@@ -23,6 +23,21 @@ def _cfg(params):
 def _allowed(cfg, chat_id):
     return str(chat_id) in R._ids(cfg.get("allowed_chat_ids")) or str(chat_id) in R._ids(cfg.get("allowed_user_ids"))
 
+def _business_target_allowed(cfg, chat_id):
+    """On the business connection the reply target must be a chat Gev selected AND a user on Deputy's own business allowlist."""
+    return str(chat_id) in R._ids(cfg.get("business_allowed_user_ids")) or str(chat_id) in R._ids(cfg.get("business_allowed_chat_ids"))
+
+def _business_gate(cfg, chat_id):
+    """Fail closed before any business send: connection present, enabled, same id, reply right granted, target selected.
+    rights.can_reply is a PROVIDER CAPABILITY — it grants Deputy no authority of its own."""
+    ProviderError, _ = _err()
+    st = R.current_connection()
+    if not st: raise ProviderError("STALE_CONFLICT: no business connection is on record — reconnect the bot in Telegram and re-read the connection before sending")
+    if not st.get("is_enabled"): raise ProviderError("STALE_CONFLICT: the business connection is DISABLED at the provider — nothing is sent")
+    if not (st.get("rights") or {}).get("can_reply"): raise ProviderError("PERMISSION_DENIED: the business connection does not grant can_reply — Gev must grant the reply right in Telegram")
+    if not _business_target_allowed(cfg, chat_id): raise ProviderError(f"PERMISSION_DENIED: chat {chat_id} is not on Deputy's business allowlist — Telegram-side scope is not Deputy authority")
+    return st
+
 def precondition(op, params):
     """The target chat must be on the allowlist (no message to an arbitrary chat); a reply target must be known."""
     ProviderError, _ = _err()
@@ -30,6 +45,10 @@ def precondition(op, params):
     except IntegrationError as e: raise ProviderError(f"{e.code}: {e.reason}")
     chat = str(params.get("chat_id") or "")
     if not chat: return {"exists": False, "object": None}
+    if params.get("on_behalf_of_gev"):
+        st = _business_gate(cfg, chat)
+        return {"exists": True, "object": {"chat_id": chat, "allowed": True, "mode": "BUSINESS (sent as Gev)", "connection_ref": st["connection_ref"], "can_reply": True,
+                                           "reply_to": str(params.get("reply_to_message_id") or "") or None}}
     if not _allowed(cfg, chat): raise ProviderError(f"PERMISSION_DENIED: chat {chat} is not on the configured allowlist — no outbound message to unknown chats")
     obj = {"chat_id": chat, "allowed": True}
     if op == "chat.reply": obj["reply_to"] = str(params.get("reply_to_message_id") or "")
@@ -52,8 +71,15 @@ def execute(op, params):
     except IntegrationError as e: raise ProviderError(f"{e.code}: {e.reason}")
     chat = str(params.get("chat_id") or ""); text = str(params.get("text") or "")
     if not chat or not text: raise ProviderError("BAD_PARAMS: chat_id and text are required")
-    if not _allowed(cfg, chat): raise ProviderError(f"PERMISSION_DENIED: chat {chat} not on the allowlist")
+    business = bool(params.get("on_behalf_of_gev")); bc = None
+    if business:
+        st = _business_gate(cfg, chat)                                     # re-checked at execution time, not only when the card was built
+        if params.get("connection_ref") and params["connection_ref"] != st["connection_ref"]:
+            raise ProviderError("STALE_CONFLICT: the business connection changed after this action was approved — nothing is sent")
+        bc = st["id"]
+    elif not _allowed(cfg, chat): raise ProviderError(f"PERMISSION_DENIED: chat {chat} not on the allowlist")
     body = {"chat_id": chat, "text": text[:4096], "disable_web_page_preview": True}
+    if business: body["business_connection_id"] = bc
     if op == "chat.reply":
         if not params.get("reply_to_message_id"): raise ProviderError("BAD_PARAMS: reply_to_message_id required for chat.reply")
         body["reply_parameters"] = {"message_id": int(params["reply_to_message_id"])}
@@ -65,9 +91,10 @@ def execute(op, params):
     mid = str((res or {}).get("message_id") or "")
     if not mid: raise ProviderUnknown("Telegram accepted the request but returned no message_id — outcome unknown")
     try:
-        import engine; engine._store().record("channel_events", f"INT-TG:out:{chat}:{mid}", {"channel": "INT-TG", "kind": "outbound", "chat_id": chat, "provider_message_id": mid, "idem_key": params.get("_idem_key"), "at": at, "op": op, "excerpt": text[:300]})
+        import engine; engine._store().record("channel_events", f"INT-TG:out:{chat}:{mid}", {"channel": "INT-TG", "kind": "outbound", "chat_id": chat, "provider_message_id": mid, "idem_key": params.get("_idem_key"), "at": at, "op": op, "excerpt": text[:300],
+                                                                                              "source_mode": "BUSINESS" if business else "BOT_CHAT", "business_connection_ref": R.connection_ref(bc) if business else None})
     except Exception: pass
-    return {"ok": True, "id": mid, "chat_id": chat, "at": at, "provider_accepted": True}
+    return {"ok": True, "id": mid, "chat_id": chat, "at": at, "provider_accepted": True, "source_mode": "BUSINESS" if business else "BOT_CHAT", "connection_ref": R.connection_ref(bc) if business else None}
 
 def verify(op, params, result):
     """Honest: provider acceptance only. No independent read-back exists for a bot's own sent message."""

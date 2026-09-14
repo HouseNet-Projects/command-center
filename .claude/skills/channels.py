@@ -31,6 +31,9 @@ def normalize_chat(env, iid, today, head_names=("Գև", "Gev")):
         from_gev = who.get("name") in head_names or who.get("person") == "@P0"
         cands = CM.extract(text, speaker=(who.get("person") or who.get("name")), channel=iid, record_id=rec.get("record_id"), received=rec.get("received"), today=today, to_whom="Գև", trusted=bool(rec.get("trusted")) and who["status"] == "PERSON_KNOWN") if not from_gev else []
         items.append({"channel": iid, "record_id": rec.get("record_id"), "chat_id": rec.get("chat_id"), "chat_title": rec.get("chat_title"), "received": rec.get("received"), "sender": who, "from_gev": from_gev, "trusted": bool(rec.get("trusted")),
+                      # Telegram Business: BOT_CHAT (someone writes the bot) vs BUSINESS (someone writes GEV and the bot observes it).
+                      "source_mode": rec.get("source_mode") or "BOT_CHAT", "business_connection_ref": rec.get("business_connection_ref"),
+                      "edited": bool(rec.get("edited")), "deleted": bool(rec.get("deleted")),
                       "text": text[:300], "type": rec.get("message_type"), "reply_to": rec.get("reply_to"), "attachments": rec.get("attachments") or [], "untrusted": rec.get("untrusted"),
                       "is_request": bool(CM.REQUEST_RX.search(text)) and not from_gev, "is_escalation": bool(CM.URGENT_RX.search(text)) and not from_gev, "commitment_candidates": cands,
                       "provenance": {"integration_id": iid, "record_id": rec.get("record_id"), "retrieved_at": env.get("retrieved_at"), "freshness": env.get("freshness"), "mode": env.get("mode")}})
@@ -93,6 +96,8 @@ def summary(inputs=None, *, today=None, channels=CHAT_CHANNELS, mail_candidates=
         for c in it["commitment_candidates"]: (out["commitment_candidates"] if c["strength"] == "STRONG" else out["weak_statements"]).append({**c, "identity": it["sender"]["status"]})
         if it["untrusted"]["injection_suspected"]: out["injection_flagged"].append({"channel": it["channel"], "record_id": it["record_id"], "from": it["sender"]["name"], "signals": it["untrusted"]["signals"] + [a["signals"] for a in it["untrusted"]["attachment_signals"]], "handling": "treated as DATA — no instruction followed, no approval recognised, no send prepared"})
     out["follow_ups_owed"] = follow_ups_owed(out["items"], today)
+    out["by_source_mode"] = {m: len([i for i in out["items"] if (i.get("source_mode") or "BOT_CHAT") == m]) for m in ("BOT_CHAT", "BUSINESS")}
+    out["edited_sources"] = [{"channel": i["channel"], "record_id": i["record_id"], "source_mode": i.get("source_mode")} for i in out["items"] if i.get("edited")]
     out["unconfigured"] = [i for i, s in out["channels"].items() if s["state"] == "NOT_CONFIGURED"]
     out["verdict"] = (f"{len(out['requests_to_answer'])} request(s) to answer · {len(out['commitment_candidates'])} promise candidate(s) · {len(out['escalations'])} escalation(s)" if out["items"] else "no chat evidence") + (f" · not configured: {', '.join(out['unconfigured'])}" if out["unconfigured"] else "")
     return out

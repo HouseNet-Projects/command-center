@@ -45,7 +45,7 @@ WRITE_OPS = {
 def write_spec(iid): return {"adapter": None, "ops": {}} | {"adapter": next((o["adapter"] for o in WRITE_OPS.get(iid, {}).values() if o.get("adapter")), None), "ops": WRITE_OPS.get(iid, {})}
 
 WRITE_OPS["INT-TG"] = {
- "chat.send":  {"risk_class": "R2", "authority_required": "EXECUTE_EXTERNAL", "idempotency_method": "runtime key (no provider read-back)", "verification_method": "PROVIDER_ACCEPTED only (message_id) — no independent read-back; full certification needs a second-source confirmation", "adapter": "adapter_telegram_write", "retry_safe_when_absent": False, "category": "MATERIAL_WRITE", "note": "outbound to allowlisted chats only"},
+ "chat.send":  {"risk_class": "R2", "authority_required": "EXECUTE_EXTERNAL", "idempotency_method": "runtime key (no provider read-back)", "verification_method": "PROVIDER_ACCEPTED only (message_id) — no independent read-back; full certification needs a second-source confirmation", "adapter": "adapter_telegram_write", "retry_safe_when_absent": False, "category": "MATERIAL_WRITE", "note": "outbound to allowlisted chats only; with on_behalf_of_gev it is sent AS GEV over the business connection — the provider right rights.can_reply is capability, never authority, and every send still needs Gev's approval"},
  "chat.reply": {"risk_class": "R2", "authority_required": "EXECUTE_EXTERNAL", "idempotency_method": "runtime key (no provider read-back)", "verification_method": "PROVIDER_ACCEPTED only (message_id) — no independent read-back", "adapter": "adapter_telegram_write", "retry_safe_when_absent": False, "category": "MATERIAL_WRITE"},
 }
 WRITE_OPS["INT-WA"] = {
