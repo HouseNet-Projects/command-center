@@ -46,7 +46,18 @@ def chat_message(iid, r, updated=None):
     atts = [{"kind": _s(a.get("kind"), 20), "name": _s(a.get("name"), 120), "size": a.get("size"), "mime": _s(a.get("mime"), 80)} for a in (r.get("attachments") or []) if isinstance(a, dict)]
     return {"record_id": rid(iid, f"{r.get('chat_id')}|{r.get('message_id')}"), "source_record_id": _s(f"{r.get('chat_id')}|{r.get('message_id')}", 200), "channel": iid, "chat_id": _s(r.get("chat_id"), 80), "chat_title": _s(r.get("chat_title"), 120),
             "sender_id": _s(r.get("sender_id"), 80), "sender_name": _s(r.get("sender_name"), 120), "text": _s(r.get("text"), 1200), "message_type": _s(r.get("message_type") or "text", 24), "reply_to": _s(r.get("reply_to"), 80) or None,
-            "received": _iso(r.get("received")), "attachments": atts, "trusted": bool(r.get("trusted")), "update_id": r.get("update_id"), "source_updated_at": _iso(r.get("received")) or updated}
+            "received": _iso(r.get("received")), "attachments": atts, "trusted": bool(r.get("trusted")), "update_id": r.get("update_id"), "source_updated_at": _iso(r.get("received")) or updated,
+            # Telegram Business: source_mode BOT_CHAT (direct bot chat) vs BUSINESS (Gev's own account, selected chats). The connection
+            # id is an operational secret, so only a short reference is carried; edited/deleted are evidence lifecycle, never silent overwrites.
+            "source_mode": _s(r.get("source_mode") or "BOT_CHAT", 12), "business_connection_ref": _s(r.get("business_connection_ref"), 24),
+            "edited": bool(r.get("edited")), "deleted": bool(r.get("deleted"))}
+
+def chat_connection(iid, r, updated=None):
+    """Business connection state. The connection id itself is NEVER stored in a record: only a short non-reversible reference."""
+    rights = {k: bool(v) for k, v in (r.get("rights") or {}).items()}
+    return {"record_id": rid(iid, f"connection|{r.get('connection_ref')}"), "source_record_id": _s(r.get("connection_ref"), 24), "channel": iid, "connection_ref": _s(r.get("connection_ref"), 24),
+            "account_user_id": _s(r.get("account_user_id"), 40), "user_chat_id": _s(r.get("user_chat_id"), 40), "connected_at": _iso(r.get("connected_at")), "rights": rights,
+            "is_enabled": bool(r.get("is_enabled")), "observed_at": _iso(r.get("observed_at")) or updated, "source_updated_at": _iso(r.get("observed_at")) or updated}
 
 def chat_status(iid, r, updated=None):
     return {"record_id": rid(iid, f"status|{r.get('message_id')}|{r.get('status')}|{r.get('at')}"), "source_record_id": _s(f"{r.get('message_id')}|{r.get('status')}", 200), "channel": iid, "message_id": _s(r.get("message_id"), 120),

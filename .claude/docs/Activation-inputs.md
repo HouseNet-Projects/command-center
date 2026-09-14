@@ -49,6 +49,37 @@ Template `~/.command-center/integrations/INT-TG.json`:
 
 ---
 
+## INT-TG — Telegram Business / Secretary Mode (same integration, second inbound source)
+
+Business mode does **not** add an integration. The same `INT-TG` stays canonical and gains a second inbound source under one update stream:
+
+| Source mode | What it is |
+|---|---|
+| `BOT_CHAT` | people write **to the bot** directly (private or allowed group) — the original behaviour, unchanged |
+| `BUSINESS` | people write **to Gev's own account**, and the connected bot observes only the chats Gev selected |
+
+**Extra config fields** (same file, `~/.command-center/integrations/INT-TG.json`, or `CC_INT_TG_*`):
+
+| field | meaning |
+|---|---|
+| `business_allowed_user_ids` | Deputy's OWN second allowlist. A business message counts as evidence only if the sender is here. Telegram-side scope is not Deputy authority |
+| `business_allowed_chat_ids` | optional, for business reply targets |
+| `business_account_user_id` | optional, Gev's Telegram user id; a connection from another account is refused as WRONG_TENANT |
+
+**Manual activation steps (Telegram UI).**
+
+1. In [@BotFather](https://t.me/botfather), enable **Business Mode** (the docs also call it *Secretary Mode*) for `@HouseNetDeputyBot`.
+2. On Gev's own account open **Settings → Telegram Business → Chatbots** and add `@HouseNetDeputyBot`.
+3. In the recipient scope choose **only the specific private chats** intended. Do not enable all existing chats, all contacts, or all new chats.
+4. Grant the **minimum** rights needed. Reply rights are only required later, for the optional outbound certification.
+5. Have one selected person send one harmless message, then run the certification.
+
+Telegram has used more than one label here (`Settings > Telegram Business` in the original announcement, and a newer *Chat Automation* entry point in later builds). If the client shows a different label, report the actual path rather than forcing these names.
+
+**What Deputy will and will not do.** Business messages are read-only observation: no read receipts are sent, nothing is marked read for Gev, and nothing is edited, deleted or pinned. History from before the connection existed is **not** available and is never claimed. Outbound on Gev's behalf stays under the approval law: `rights.can_reply` is a provider capability, never authority, so every reply is still a prepared card that Gev approves, and a changed or disabled connection turns an approved-but-unsent action into `STALE_CONFLICT` instead of a send.
+
+---
+
 ## INT-WA — WhatsApp Business (official Cloud API)
 
 **Required**

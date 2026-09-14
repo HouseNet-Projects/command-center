@@ -97,6 +97,34 @@ def ingest(cands, *, origin="EXTERNAL"):
         else: merged.append(oid)
     return {"new": new, "merged": merged, "weak_candidates": weak}
 
+def source_changed(record_id, *, channel, state, new_text=None, at=None):
+    """A source message was EDITED or DELETED at the provider. Deleting a message never fulfils or cancels a promise and editing it
+    never rewrites what was already recorded: the original quote is preserved, the evidence ref is marked, confidence drops to
+    UNVERIFIED, and a material change (the promise text itself moved) is surfaced as a contradiction for Gev to resolve."""
+    if state not in ("EDITED", "DELETED"): return {"status": "BLOCKED", "reason": f"unknown source state {state}"}
+    st = _st(); touched = []
+    for r in st.list("commitments"):
+        refs = r.get("evidence") or []
+        hit = [e for e in refs if e.get("record_id") == record_id and (not channel or e.get("channel") == channel)]
+        if not hit: continue
+        d = dict(r); material = False
+        for e in d["evidence"]:
+            if e.get("record_id") != record_id or (channel and e.get("channel") != channel): continue
+            e["source_state"] = state; e["source_state_at"] = at or _now()
+            if state == "EDITED" and new_text is not None:
+                e["edited_text"] = str(new_text)[:240]                      # the ORIGINAL quote stays in e["quote"], never overwritten
+                material = len(tokens(e.get("quote")) ^ tokens(new_text)) > 0
+            if state == "DELETED": material = True
+        live = [e for e in d["evidence"] if e.get("source_state") != "DELETED"]
+        d["confidence"] = "UNVERIFIED"; d["last_seen"] = _now()
+        d["source_lifecycle"] = (d.get("source_lifecycle") or []) + [{"record_id": record_id, "channel": channel, "state": state, "at": at or _now(), "material": bool(material)}]
+        if material:
+            d["contradiction"] = {"reason": ("the source message was deleted at the provider" if state == "DELETED" else "the source message was edited after it was recorded"),
+                                  "evidence_remaining": len(live), "needs": "Gev decides whether this promise still stands — Deputy does not close or cancel it on a provider edit/delete"}
+        st.upsert("commitments", d["op_id"], d); touched.append({"op_id": d["op_id"], "material": bool(material), "evidence_remaining": len(live)})
+    return {"status": "EXECUTED", "state": state, "record_id": record_id, "affected": touched,
+            "note": "evidence lifecycle recorded; no commitment was fulfilled, cancelled or deleted by this provider event"}
+
 def lifecycle_state(r, today):
     if r.get("state") in ("FULFILLED", "CANCELLED", "SUPERSEDED", "UNVERIFIED"): return r["state"]
     due = r.get("due")
