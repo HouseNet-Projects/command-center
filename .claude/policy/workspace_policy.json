@@ -186,7 +186,6 @@
       ".claude",
       ".git",
       ".venv",
-      "_TEMP_WORK_COLLECTION",
       ".secure"
     ],
     "required_dirs": [
@@ -379,21 +378,23 @@
         "helper code"
       ],
       "allowed_extensions": [
-        "txt",
-        "md",
-        "zip",
-        "jpg",
-        "jpeg",
-        "png",
-        "pdf",
         "csv",
-        "xlsx",
+        "html",
+        "jpeg",
+        "jpg",
         "json",
-        "opus",
+        "md",
         "mp3",
         "mp4",
+        "opus",
+        "pdf",
+        "png",
+        "svg",
+        "txt",
         "vcf",
-        "webp"
+        "webp",
+        "xlsx",
+        "zip"
       ],
       "naming_rule": "source",
       "retention_rule": "kept as evidence; never edited",
@@ -417,7 +418,11 @@
       ],
       "allowed_extensions": "*",
       "naming_rule": "business-or-technical",
-      "retention_rule": "never deleted; never edited"
+      "retention_rule": "never deleted; never edited",
+      "verbatim_subdirs": [
+        "Previous-projects"
+      ],
+      "verbatim_note": "Sealed historical packages from earlier projects. Inside a verbatim subdirectory the ORIGINAL file and folder names are preserved exactly as received, because an archive is evidence and is never edited or renamed. Naming rules are therefore not applied there; every other rule (classification, boundary scan, no credentials) still is."
     },
     ".claude": {
       "kind": "agent-runtime-root",
@@ -707,8 +712,7 @@
     "ignored_dir_names": [
       "__pycache__",
       ".git",
-      ".venv",
-      "_TEMP_WORK_COLLECTION"
+      ".venv"
     ],
     "ignored_file_globs": [
       "*.pyc",
@@ -823,17 +827,6 @@
     ],
     "note": "relative links must resolve; anchors and URLs are ignored"
   },
-  "temporary_staging": {
-    "dir": "_TEMP_WORK_COLLECTION",
-    "since": "2026-09-11",
-    "authorized_by": "Gev",
-    "purpose": "one-off consolidation of scattered work material from this PC before Mission 4.1; staging only — not part of the taxonomy, never committed, removed after Gev's review",
-    "rules": [
-      "contents are not validated against naming rules (ignored subtree)",
-      "gitignored + classified CONFIDENTIAL (sensitive_scan blocks staging)",
-      "no credentials are moved here"
-    ]
-  },
   "durability": {
     "law": "No important local-only durable truth. Everything Deputy or Gev needs tomorrow is (1) versioned directly, (2) versioned as an encrypted recovery artifact, or (3) deterministically reproducible from versioned content. Only ephemeral or machine-specific data stays local.",
     "canonical_repository": "ohanyan88-cmd/Command-center (branch main)",
@@ -875,8 +868,7 @@
         "Outlook desktop session"
       ],
       "EPHEMERAL": [
-        ".claude/state/skill_state.db (+wal/shm), journal.jsonl, tickets, integrations_cache/health json, *.lock, .claude/audit/skill_audit.jsonl mirror (the store export is the durable form)",
-        "_TEMP_WORK_COLLECTION (staging, pending Gev's review)"
+        ".claude/state/skill_state.db (+wal/shm), journal.jsonl, tickets, integrations_cache/health json, *.lock, .claude/audit/skill_audit.jsonl mirror (the store export is the durable form)"
       ]
     },
     "live_data": {

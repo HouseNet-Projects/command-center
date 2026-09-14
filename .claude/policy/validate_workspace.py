@@ -151,6 +151,8 @@ def check_path(path, pol, root=DEFAULT_ROOT, is_dir=None):
                 if dc.get("allowed_extensions") != "*" and ext not in dc.get("allowed_extensions", []): v.append(f"{rel}: extension .{ext} not allowed in {top}")
         return v
     if top in ("03_Completed", "05_Archive"):
+        # sealed historical packages keep their ORIGINAL names: an archive is evidence, and renaming it destroys provenance
+        if top == "05_Archive" and len(parts) >= 2 and parts[1] in dc.get("verbatim_subdirs", []): return v
         if is_dir: v += [f"{rel}: {x}" for x in check_business_name(name, pol, is_dir=True)]
         else:
             ok_business = not check_business_name(name, pol)

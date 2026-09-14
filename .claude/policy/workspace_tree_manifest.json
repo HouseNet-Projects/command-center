@@ -45,7 +45,6 @@
   "*.tmp",
   "~$*",
   "desktop.ini",
-  "_TEMP_WORK_COLLECTION/**",
   ".claude/settings.local.json"
  ],
  "release_churn": [
@@ -645,14 +644,6 @@
    "required": true,
    "durability": "VERSION_DIRECTLY",
    "restore": "git clone",
-   "classification": "CONFIDENTIAL"
-  },
-  {
-   "path": "_TEMP_WORK_COLLECTION",
-   "kind": "directory",
-   "required": false,
-   "durability": "EPHEMERAL",
-   "restore": "staging only — pending Gev's review; never versioned",
    "classification": "CONFIDENTIAL"
   },
   {
