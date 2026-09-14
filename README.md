@@ -184,6 +184,8 @@ git lfs install && git lfs pull        # երկուական բիզնես ֆայ�
 python bootstrap.py                    # runtime, durable state, credentials, certification
 ```
 
+**Windows-ում՝ երկար ուղիներ։** Արխիվային անվանատարածքը կրում է հին նախագծերի բնօրինակ, երկար ֆայլանունները։ Եթե clone-ը դնես շատ խորը պանակում, Windows-ի 260-նիշ սահմանը կարող է տալ `Filename too long`։ Լուծումը՝ `git config --global core.longpaths true`, կամ պարզապես clone արա կարճ ուղու վրա (օր.՝ `C:\Command-center`)։ `bootstrap.py`-ը զգուշացնում է այս մասին։
+
 **Git LFS-ը պարտադիր է։** Office փաստաթղթերը, PDF-երը, արխիվները և git bundle-ները պահվում են LFS-ով, որովհետև GitHub-ը մերժում է 100 ՄԲ-ից մեծ սովորական blob-երը, իսկ այս workspace-ում այդպիսիք կան։ Կանոնները՝ [.gitattributes](.gitattributes)-ում՝ `*.docx *.xlsx *.xlsm *.pptx *.pdf *.zip *.7z *.bundle`։ Պատկերները դիտմամբ մնում են սովորական Git-ում՝ ընդհանուր ծավալը փոքր է, իսկ LFS-ի թողունակությունը ամեն clone-ի վրա ծախսվում է։ Եթե նոր մեքենայում LFS չկա, `bootstrap.py`-ը կանգնում է հստակ հրահանգով, և եթե LFS օբյեկտները ներբեռնված չեն՝ ասում է `git lfs pull`։
 
 **Git-ից դուրս մնում է միայն այն, ինչը վերարտադրելի է կամ գաղտնիք է.** `.venv`, `__pycache__`, մեքենայական աղբ, ephemeral runtime state (canonical durable export-ը՝ `.claude/state/durable/`, versioned է), վերարտադրվող business-model և integration JSON-ները, և plaintext credential-ները։ Վերջիններս ապրում են միայն `.secure/credentials.gpg`-ում, բանալին՝ repo-ից դուրս։

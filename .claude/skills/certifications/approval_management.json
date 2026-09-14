@@ -620,7 +620,7 @@
   "test_operating_layer.M01_Commitments.test_executor_answers"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T17:24:07",
+ "certified_at": "2026-09-14T17:35:02",
  "fingerprint": "aca82a59d8a9323474e44c8c",
  "core_fingerprint": "c346f60bee1463d1",
  "result": "PASS",

@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-14T17:24:29",
+ "generated_at": "2026-09-14T17:35:30",
  "algorithm": "sha256",
  "files": {
   ".claude/business/bm_company.py": {
@@ -1123,16 +1123,16 @@
    "size": 50085
   },
   "README.md": {
-   "sha256": "8dc2b6d3e8c6a8f1f736e32b21e8a03a3b8a43c2e4e0e6e5156116269a485fbc",
-   "size": 36006
+   "sha256": "6546157665362bc0f5dfb522e522c1fd42fc03195504922b12e27a9ea8bb77cd",
+   "size": 36563
   },
   "Tasks.xlsx": {
    "sha256": "bb33a6d71f1e36368ee6786044aef242dfbb7c46184c172971b75307a6c50d00",
    "size": 11984
   },
   "bootstrap.py": {
-   "sha256": "e8697b93fb87dbda7a7d924d369e49495fcf50a6e073f08f133f45b4297e5005",
-   "size": 12882
+   "sha256": "eb12b4f3fbffdb7c1418feae64877a58076e317a1e675ef5665a07c2be6c4e1c",
+   "size": 13776
   }
  }
 }

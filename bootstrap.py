@@ -68,6 +68,19 @@ def stage1(argv, rep):
                         if f.stat().st_size < 400 and f.read_bytes()[:24].startswith(b"version https://git-lfs"): ptr.append(str(f.relative_to(ROOT)))
                     except OSError: pass
         if ptr: pre.append("Git LFS objects are not downloaded (%d pointer file(s), e.g. %s) - run: git lfs pull" % (len(ptr), ptr[0]))
+    # Windows MAX_PATH: the archive namespace carries long original filenames, so a clone placed deep in the filesystem can fail
+    # checkout with "Filename too long". Verified real: a clone under a deeply nested temp path lost two files this way.
+    if platform.system() == "Windows":
+        rc_lp, out_lp = _run(["git", "config", "--get", "core.longpaths"])
+        if (out_lp or "").strip().lower() != "true":
+            longest = 0
+            for area in ("05_Archive",):
+                for f in (ROOT / area).rglob("*"):
+                    longest = max(longest, len(str(f)))
+            if longest > 200:
+                rep.step(2, "windows long paths", "WARN",
+                         "longest path is %d characters and core.longpaths is off - if a clone ever fails with 'Filename too long', "
+                         "run: git config --global core.longpaths true" % longest)
     rep.step(2, "prerequisites", "FAIL" if pre else ("OK" if gpg else "WARN"), ("; ".join(pre)) if pre else (f"python {platform.python_version()}, git, git-lfs={'yes' if lfs else 'not required'}, gpg={'yes' if gpg else 'NO (encrypted credentials cannot be restored)'}"))
     if pre: return False
     # 3 canonical directories (from the policy-derived manifest; stdlib read of the versioned manifest)
