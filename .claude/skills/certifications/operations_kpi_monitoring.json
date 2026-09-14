@@ -31,9 +31,9 @@
  ],
  "routing_evals": [],
  "failed_tests": [],
- "certified_at": "2026-09-12T07:10:57",
- "fingerprint": "d582df01fe149ed7d0ecbd85",
- "core_fingerprint": "b66d5af33dd07bf1",
+ "certified_at": "2026-09-14T11:48:35",
+ "fingerprint": "ebb0f4c099078fa142517a26",
+ "core_fingerprint": "c4fc99c8a9df60f4",
  "result": "PASS",
  "suites": [
   "test_skills",
