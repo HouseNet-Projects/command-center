@@ -204,7 +204,11 @@ def query(integration_id, op, params=None, *, use_cache=True, transport=None, in
         return env
     except C.IntegrationError as e:
         hs = C.HEALTH_FOR_CODE.get(e.code, "UNAVAILABLE"); reason = _secrets.redact(e.reason)
-        health.record(integration_id, False, status=hs, code=e.code, reason=reason, op=op, mode=mode)
+        # An OPTIONAL sub-capability that is simply not activated yet is not an integration failure: reporting "not connected"
+        # must never downgrade the integration's health, and with it a Gev-certified write capability. The envelope below is
+        # still an honest FAILED/NOT_CONFIGURED and is still audited — only the health downgrade is suppressed.
+        sub = bool((spec["read_ops"].get(op) or {}).get("sub_capability")) and e.code in ("NOT_CONFIGURED", "DEFERRED")
+        if not sub: health.record(integration_id, False, status=hs, code=e.code, reason=reason, op=op, mode=mode)
         stale = _cache_get(integration_id, k)          # the last good UNEXPIRED read is surfaced explicitly (stale_*), never as current data
         env = C.failure(integration_id, system, op, e.code, reason, health=hs, last_success=(health.get(integration_id) or {}).get("last_success"), detail=_secrets.redact(str(e.detail)) if e.detail else None,
                         retryable=e.retryable, stale_records=(stale or {}).get("records"), stale_retrieved_at=(stale or {}).get("retrieved_at"), mode=mode)

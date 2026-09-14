@@ -472,5 +472,39 @@ class C06_TelegramBusiness(unittest.TestCase):
         blob = json.dumps(engine._store().list("channel_events"), ensure_ascii=False)
         self.assertNotIn(BCID, blob); self.assertEqual(SEC.leaks(engine._store().list("channel_events")), [])
 
+class C07_SubCapabilityHealth(unittest.TestCase):
+    """REGRESSION: asking 'is a business connection present?' before one exists once marked the whole integration
+    NOT_CONFIGURED and silently downgraded a Gev-certified chat.send from VERIFIED_WRITE to CONFIGURED. An optional
+    sub-capability that is simply not activated yet is not an integration health failure."""
+    def setUp(self):
+        env(TG_ENV); fresh(); TG.default_transport = tg_transport()
+        CAP.WRITE_CERTS = TMP / f"wc-sub-{self._testMethodName}.json"
+    def tearDown(self): TG.default_transport = _tr_orig["tg"]
+
+    @covers(CI, "action_runtime", *GOV, kinds=("failure", "adversarial"))
+    def test_inactive_sub_capability_probe_does_not_degrade_health_or_capability(self):
+        tr = tg_transport()
+        layer.query("INT-TG", "identity", {}, use_cache=False, transport=tr)                 # healthy baseline
+        self.assertEqual((health.get("INT-TG") or {}).get("status"), "AVAILABLE")
+        before = CAP.capability("INT-TG", "chat.send")["connected"]
+        e = layer.query("INT-TG", "business.connection", {}, use_cache=False, transport=tr)
+        self.assertEqual(e["status"], "FAILED"); self.assertEqual(e["code"], "NOT_CONFIGURED")   # still honest…
+        self.assertTrue(e.get("audit_recorded"))                                                 # …and still audited
+        h = health.get("INT-TG") or {}
+        self.assertEqual(h.get("status"), "AVAILABLE")                                           # …but health untouched
+        self.assertEqual(h.get("consecutive_failures"), 0)
+        self.assertEqual(CAP.capability("INT-TG", "chat.send")["connected"], before)
+        self.assertTrue(registry.get("INT-TG")["read_ops"]["business.connection"]["sub_capability"])
+
+    @covers(CI, *GOV, kinds=("failure_injection",))
+    def test_a_genuine_failure_still_degrades_health(self):
+        tr = tg_transport()
+        layer.query("INT-TG", "identity", {}, use_cache=False, transport=tr)
+        bad = tg_transport({"getMe": (401, json.dumps({"ok": False, "error_code": 401, "description": "Unauthorized"}))})
+        e = layer.query("INT-TG", "identity", {}, use_cache=False, transport=bad)
+        self.assertEqual(e["code"], "AUTH_FAILED")
+        h = health.get("INT-TG") or {}
+        self.assertEqual(h.get("status"), "AUTH_FAILED"); self.assertGreaterEqual(h.get("consecutive_failures"), 1)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
