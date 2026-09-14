@@ -4,6 +4,9 @@
 Ելք՝ 01_Active/Operations/Delivery-schedule-<date>.xlsx  և  Delivery-schedule-whatsapp-<date>.txt"""
 import sys, os, io, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "policy"))
+import paths as _paths                                   # ONE business-root resolver
+_BUSINESS_ROOT = _paths.root_name()
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border
 
@@ -25,7 +28,7 @@ def when(d):
     return f"{d.strftime('%m-%d')} · {HY[d.weekday()]}" if d else "ժամկետ չկա"
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DEST = os.path.join(ROOT, "01_Active", "Operations")
+DEST = os.path.join(ROOT, _BUSINESS_ROOT, "01_Active", "Operations")
 stamp = TODAY.strftime("%Y-%m-%d")
 RULE = "─────────────────────"
 

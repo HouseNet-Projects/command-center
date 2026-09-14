@@ -33,9 +33,9 @@
   "test_operating_layer.B01_DocumentsRoutinesRouting.test_natural_language_routing_regression"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T17:35:02",
- "fingerprint": "54baf116d3a4485ee0182880",
- "core_fingerprint": "c346f60bee1463d1",
+ "certified_at": "2026-09-14T19:33:53",
+ "fingerprint": "7e57ef52a50921289da188c6",
+ "core_fingerprint": "0af15296acbfd2ed",
  "result": "PASS",
  "suites": [
   "test_skills",

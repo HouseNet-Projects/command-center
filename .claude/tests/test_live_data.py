@@ -12,9 +12,11 @@ sys.path.insert(0, str(HERE))
 for d in ("integrations", "skills", "business", "runtime", "policy"): sys.path.insert(0, str(ROOT / ".claude" / d))
 from testing import covers
 import engine, store, executors, business, tree_manifest as tm, data_sync, build_business_model as bb, bm_sources, certify_business as cb
+import paths as pp                                                    # ONE business-root resolver
+def W(rel): return pp.to_repo(rel)                                     # 01_Active/... -> WORKSPACE/01_Active/...
 
 TMP = pathlib.Path(tempfile.mkdtemp(prefix="cclive_")); engine.STATE_DIR = TMP / "state"; (TMP / "state").mkdir(parents=True, exist_ok=True); store.reset()
-REAL = ROOT / "Tasks.xlsx"; REAL_SHA = hashlib.sha256(REAL.read_bytes()).hexdigest() if REAL.exists() else None
+REAL = pp.tasks(ROOT); REAL_SHA = hashlib.sha256(REAL.read_bytes()).hexdigest() if REAL.exists() else None
 os.environ["COMMAND_CENTER_TASKS_XLSX"] = str(TMP / "guard-never-written.xlsx")          # HARD GUARD: the write adapter can never default to the real register here
 def tearDownModule():
     for k in ("COMMAND_CENTER_BUSINESS_DIR", "COMMAND_CENTER_BUSINESS_ROOT"): os.environ.pop(k, None)
@@ -67,8 +69,9 @@ class L02_ModelBinding(unittest.TestCase):
     def setUpClass(cls):
         cls.root = TMP / "ws"; cls.biz = TMP / "ws_model"; cls.biz.mkdir(parents=True, exist_ok=True)
         for s in bm_sources.SOURCES:
-            src = ROOT / s["path"]
-            if src.exists(): (cls.root / s["path"]).parent.mkdir(parents=True, exist_ok=True); shutil.copy(src, cls.root / s["path"])
+            rel = W(s["path"])                                            # bm_sources states them business-relative
+            src = ROOT / rel
+            if src.exists(): (cls.root / rel).parent.mkdir(parents=True, exist_ok=True); shutil.copy(src, cls.root / rel)
         cls.core, cls.ov, cls.snap, _ = bb.build(root=cls.root); bb.write(cls.core, cls.ov, out_dir=cls.biz)
         rec = cb.certify(cls.core, cls.ov, root=cls.root, d=cls.biz, check_git=False); (cls.biz / "certification.json").write_text(json.dumps(rec), encoding="utf-8")
         assert rec["result"] == "PASS", {k: v for k, v in rec["checks"].items() if not v["pass"]}
@@ -82,7 +85,7 @@ class L02_ModelBinding(unittest.TestCase):
     def _state(self): return business.model_state(business.load(force=True))
     @covers(BQ, "task_management", "daily_briefing", *GOV, kinds=("unit", "completion"))
     def test_task_row_mutations_never_invalidate_the_certified_core(self):
-        p = self.root / "Tasks.xlsx"; fp0 = self.snap["S09"]["sha256"]; cf0 = self.core["sources"]["meta"]["core_fingerprint"]; sid0 = self.core["sources"]["meta"]["source_snapshot_id"]
+        p = self.root / W("Tasks.xlsx"); fp0 = self.snap["S09"]["sha256"]; cf0 = self.core["sources"]["meta"]["core_fingerprint"]; sid0 = self.core["sources"]["meta"]["source_snapshot_id"]
         self.assertEqual(self.snap["S09"]["scope"], "STRUCTURE"); self.assertEqual(self.snap["S09"]["live_integration"], "INT-TASKS")
         _mutate_rows(p)
         self.assertEqual(bb.snapshot(self.root)["S09"]["sha256"], fp0)                                  # binding unchanged
@@ -94,7 +97,7 @@ class L02_ModelBinding(unittest.TestCase):
         ctx = business.context_for("deadline_management", "what is overdue", {}, None); self.assertEqual(ctx["model"]["state"], "CURRENT"); self.assertNotIn("STALE_MODEL", ctx["gaps"]); self.assertNotIn("SOURCE_CHANGED", ctx["gaps"])
     @covers(BQ, "source_verification", *GOV, kinds=("unit", "failure", "failure_injection"))
     def test_register_schema_change_still_hits_the_certification_boundary(self):
-        p = self.root / "Tasks.xlsx"; keep = p.read_bytes()
+        p = self.root / W("Tasks.xlsx"); keep = p.read_bytes()
         try:
             _rename_header(p)
             rec = self._certify(); self.assertEqual(rec["result"], "FAIL"); self.assertIn("S09 SOURCE_CHANGED", rec["checks"]["source_fingerprints_current"]["problems"])
@@ -103,7 +106,7 @@ class L02_ModelBinding(unittest.TestCase):
         self.assertEqual(self._state()["state"], "CURRENT")
     @covers(BQ, "source_verification", *GOV, kinds=("unit", "failure_injection"))
     def test_extracted_model_source_change_still_invalidates(self):
-        p = self.root / "Actions.md"; keep = p.read_bytes()
+        p = self.root / W("Actions.md"); keep = p.read_bytes()
         try:
             p.write_text(keep.decode("utf-8") + "\n- new line\n", encoding="utf-8")
             rec = self._certify(); self.assertEqual(rec["result"], "FAIL"); self.assertIn("S14 SOURCE_CHANGED", rec["checks"]["source_fingerprints_current"]["problems"])
@@ -123,7 +126,7 @@ class L02_ModelBinding(unittest.TestCase):
         self.assertEqual(bm_sources.kind(S09), "LIVE_REGISTER"); self.assertEqual(bm_sources.scope(S09), "STRUCTURE"); self.assertEqual(S09["live_integration"], "INT-TASKS")
         self.assertEqual([s["source_id"] for s in bm_sources.SOURCES if bm_sources.scope(s) == "STRUCTURE"], ["S09"])
         snap = bb.snapshot(ROOT)["S09"]; self.assertEqual(snap["scope"], "STRUCTURE"); self.assertIsNone(snap["size"]); self.assertEqual(snap["sha256"], _struct(REAL))
-        self.assertEqual(sorted(data_sync.model_source_paths()), sorted(s["path"] for s in bm_sources.SOURCES if s["currency"] == "CURRENT" and s["source_id"] != "S09"))
+        self.assertEqual(sorted(data_sync.model_source_paths()), sorted(W(s["path"]) for s in bm_sources.SOURCES if s["currency"] == "CURRENT" and s["source_id"] != "S09"))
 
 class L03_ProvenanceAndEvidence(unittest.TestCase):
     @covers(BQ, "daily_briefing", "deadline_management", *GOV, kinds=("unit", "completion"))
@@ -141,11 +144,11 @@ class L03_ProvenanceAndEvidence(unittest.TestCase):
         acts = [json.loads(l) for l in (ROOT / ".claude" / "state" / "durable" / "actions.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
         st = {a["op_id"]: a["status"] for a in acts}; self.assertEqual(st.get("ACT-ef5fb6b5d0"), "VERIFIED"); self.assertEqual(st.get("ACT-0854f55fe0"), "VERIFIED")
 
-def _repo(name, model_sources=("Actions.md", "01_Active/Sales/Source.docx")):
+def _repo(name, model_sources=(W("Actions.md"), W("01_Active/Sales/Source.docx"))):
     """Temp git repository shaped like the workspace (subset), with stored checksums, one commit, identity configured, no remote."""
-    r = TMP / name; (r / ".claude" / "policy").mkdir(parents=True); (r / ".claude" / "state" / "durable").mkdir(parents=True); (r / ".claude" / "skills").mkdir(); (r / "00_Inbox").mkdir(); (r / "01_Active" / "Sales").mkdir(parents=True)
-    shutil.copy(REAL, r / "Tasks.xlsx"); (r / "Journal.md").write_text("# J\n", encoding="utf-8"); (r / "Actions.md").write_text("# A\n", encoding="utf-8"); (r / "00_Inbox" / "Input.md").write_text("", encoding="utf-8")
-    (r / "01_Active" / "Sales" / "Source.docx").write_bytes(b"src"); (r / "01_Active" / "Sales" / "Other.docx").write_bytes(b"other"); (r / ".claude" / "skills" / "x.py").write_text("x = 1\n", encoding="utf-8")
+    r = TMP / name; (r / ".claude" / "policy").mkdir(parents=True); (r / ".claude" / "state" / "durable").mkdir(parents=True); (r / ".claude" / "skills").mkdir(); (r / W("00_Inbox")).mkdir(parents=True); (r / W("01_Active/Sales")).mkdir(parents=True)
+    shutil.copy(REAL, r / W("Tasks.xlsx")); (r / W("Journal.md")).write_text("# J\n", encoding="utf-8"); (r / W("Actions.md")).write_text("# A\n", encoding="utf-8"); (r / W("00_Inbox/Input.md")).write_text("", encoding="utf-8")
+    (r / W("01_Active/Sales/Source.docx")).write_bytes(b"src"); (r / W("01_Active/Sales/Other.docx")).write_bytes(b"other"); (r / ".claude" / "skills" / "x.py").write_text("x = 1\n", encoding="utf-8")
     (r / ".claude" / "state" / "durable" / "actions.jsonl").write_text("", encoding="utf-8"); (r / ".gitignore").write_text(".claude/state/*\n!.claude/state/durable/\n!.claude/state/durable/**\n", encoding="utf-8")
     shutil.copy(ROOT / ".claude" / "policy" / "workspace_policy.json", r / ".claude" / "policy" / "workspace_policy.json")
     tm.write_checksums(r, r / ".claude" / "policy" / "durable_checksums.json")
@@ -157,30 +160,30 @@ def _repo(name, model_sources=("Actions.md", "01_Active/Sales/Source.docx")):
 class L04_DriftClassification(unittest.TestCase):
     @covers(*GOV, DS, kinds=("unit",))
     def test_classify_path_is_deterministic(self):
-        spec = tm.live_data_spec(); ms = ["Actions.md", "01_Active/Sales/Source.docx"]
-        cases = {"Tasks.xlsx": "LIVE_DATA", "Journal.md": "LIVE_DATA", "00_Inbox/Input.md": "LIVE_DATA", ".claude/state/durable/actions.jsonl": "DURABLE_STATE", ".claude/policy/durable_checksums.json": "INTEGRITY_META",
-                 "Actions.md": "MODEL_SOURCE", "01_Active/Sales/Source.docx": "MODEL_SOURCE", "01_Active/Sales/Other.docx": "DOCUMENT", "04_Sources/Imports/x.csv": "DOCUMENT", ".claude/skills/x.py": "PRODUCT", ".claude/policy/workspace_policy.json": "PRODUCT",
+        spec = tm.live_data_spec(); ms = [W("Actions.md"), W("01_Active/Sales/Source.docx")]
+        cases = {W("Tasks.xlsx"): "LIVE_DATA", W("Journal.md"): "LIVE_DATA", W("00_Inbox/Input.md"): "LIVE_DATA", ".claude/state/durable/actions.jsonl": "DURABLE_STATE", ".claude/policy/durable_checksums.json": "INTEGRITY_META",
+                 W("Actions.md"): "MODEL_SOURCE", W("01_Active/Sales/Source.docx"): "MODEL_SOURCE", W("01_Active/Sales/Other.docx"): "DOCUMENT", W("04_Sources/Imports/x.csv"): "DOCUMENT", ".claude/skills/x.py": "PRODUCT", ".claude/policy/workspace_policy.json": "PRODUCT",
                  "CLAUDE.md": "PRODUCT", ".claude/skills/certifications/a.json": "RELEASE_ARTIFACT", ".claude/skills/registry.json": "RELEASE_ARTIFACT", "stray.txt": "UNKNOWN", "Random/thing.md": "UNKNOWN"}
         for path, want in cases.items(): self.assertEqual(tm.classify_path(path, spec, ms), want, path)
     @covers(*GOV, DS, "completion_verification", kinds=("unit", "failure", "failure_injection"))
     def test_drift_states_clean_sync_release_unclassified(self):
         r, ms, _ = _repo("drift")
         self.assertEqual(tm.classify_drift(r, ms)["state"], "CLEAN")
-        _mutate_rows(r / "Tasks.xlsx"); d = tm.classify_drift(r, ms)
-        self.assertEqual(d["state"], "SYNC_REQUIRED"); self.assertEqual(d["changes"], {"LIVE_DATA": ["Tasks.xlsx"]}); self.assertEqual(d["checksum_drift"], {"LIVE_DATA": ["Tasks.xlsx"]})
-        (r / "Journal.md").write_text("# J\n- entry\n", encoding="utf-8"); (r / ".claude" / "state" / "durable" / "actions.jsonl").write_text("{}\n", encoding="utf-8"); (r / "01_Active" / "Sales" / "Other.docx").write_bytes(b"other2")
+        _mutate_rows(r / W("Tasks.xlsx")); d = tm.classify_drift(r, ms)
+        self.assertEqual(d["state"], "SYNC_REQUIRED"); self.assertEqual(d["changes"], {"LIVE_DATA": [W("Tasks.xlsx")]}); self.assertEqual(d["checksum_drift"], {"LIVE_DATA": [W("Tasks.xlsx")]})
+        (r / W("Journal.md")).write_text("# J\n- entry\n", encoding="utf-8"); (r / ".claude" / "state" / "durable" / "actions.jsonl").write_text("{}\n", encoding="utf-8"); (r / W("01_Active/Sales/Other.docx")).write_bytes(b"other2")
         d = tm.classify_drift(r, ms); self.assertEqual(d["state"], "SYNC_REQUIRED"); self.assertEqual(sorted(d["changes"]), ["DOCUMENT", "DURABLE_STATE", "LIVE_DATA"])
         (r / ".claude" / "skills" / "x.py").write_text("x = 2\n", encoding="utf-8"); d = tm.classify_drift(r, ms); self.assertEqual(d["state"], "RELEASE_REQUIRED"); self.assertEqual(d["changes"]["PRODUCT"], [".claude/skills/x.py"])
-        (r / ".claude" / "skills" / "x.py").write_text("x = 1\n", encoding="utf-8"); (r / "Actions.md").write_text("# A\n- changed\n", encoding="utf-8")
-        d = tm.classify_drift(r, ms); self.assertEqual(d["state"], "RELEASE_REQUIRED"); self.assertEqual(d["changes"]["MODEL_SOURCE"], ["Actions.md"])
-        (r / "Actions.md").write_text("# A\n", encoding="utf-8"); (r / "stray.txt").write_text("?", encoding="utf-8")
+        (r / ".claude" / "skills" / "x.py").write_text("x = 1\n", encoding="utf-8"); (r / W("Actions.md")).write_text("# A\n- changed\n", encoding="utf-8")
+        d = tm.classify_drift(r, ms); self.assertEqual(d["state"], "RELEASE_REQUIRED"); self.assertEqual(d["changes"]["MODEL_SOURCE"], [W("Actions.md")])
+        (r / W("Actions.md")).write_text("# A\n", encoding="utf-8"); (r / "stray.txt").write_text("?", encoding="utf-8")
         d = tm.classify_drift(r, ms); self.assertEqual(d["state"], "UNCLASSIFIED"); self.assertEqual(d["changes"]["UNKNOWN"], ["stray.txt"])
     @covers(*GOV, DS, kinds=("unit", "failure"))
     def test_checksum_drift_alone_is_detected_and_classified(self):
         r, ms, _ = _repo("csdrift"); cs = json.loads((r / ".claude" / "policy" / "durable_checksums.json").read_text(encoding="utf-8"))
-        cs["files"]["Tasks.xlsx"]["sha256"] = "0" * 64; (r / ".claude" / "policy" / "durable_checksums.json").write_text(json.dumps(cs), encoding="utf-8")
+        cs["files"][W("Tasks.xlsx")]["sha256"] = "0" * 64; (r / ".claude" / "policy" / "durable_checksums.json").write_text(json.dumps(cs), encoding="utf-8")
         subprocess.run(["git", "commit", "-q", "-am", "stale checksum"], cwd=str(r), capture_output=True)
-        d = tm.classify_drift(r, ms); self.assertEqual(d["state"], "SYNC_REQUIRED"); self.assertEqual(d["changes"], {}); self.assertEqual(d["checksum_drift"], {"LIVE_DATA": ["Tasks.xlsx"]})
+        d = tm.classify_drift(r, ms); self.assertEqual(d["state"], "SYNC_REQUIRED"); self.assertEqual(d["changes"], {}); self.assertEqual(d["checksum_drift"], {"LIVE_DATA": [W("Tasks.xlsx")]})
 
 class L05_LiveDataSync(unittest.TestCase):
     def setUp(self):
@@ -197,7 +200,7 @@ class L05_LiveDataSync(unittest.TestCase):
         r, ms, br = _repo("sync"); h0 = self._head(r)
         data_sync.model_source_paths = lambda: ms                      # the temp repo's declared model sources (restored below)
         try:
-            _mutate_rows(r / "Tasks.xlsx"); (r / "Journal.md").write_text("# J\n- synced entry\n", encoding="utf-8")
+            _mutate_rows(r / W("Tasks.xlsx")); (r / W("Journal.md")).write_text("# J\n- synced entry\n", encoding="utf-8")
             dry = data_sync.run(r, dry_run=True, push=False, log=lambda *a: None, allow_branch=br)
             self.assertEqual(dry["result"], "DRY_RUN" if False else dry["result"]); self.assertEqual(self._head(r), h0); self.assertEqual(tm.classify_drift(r, ms)["state"], "SYNC_REQUIRED")   # dry run changes nothing
             rep = data_sync.run(r, dry_run=False, push=False, log=lambda *a: None, allow_branch=br)
@@ -208,20 +211,20 @@ class L05_LiveDataSync(unittest.TestCase):
             self.assertIn("sync: live data", shown); self.assertIn("Tasks.xlsx", shown); self.assertIn("durable_checksums.json", shown); self.assertNotIn("x.py", shown)
             self.assertEqual(tm.classify_drift(r, ms)["state"], "CLEAN")
             # recovery truth: the committed register is the mutated one
-            blob = subprocess.run(["git", "show", "HEAD:Tasks.xlsx"], cwd=str(r), capture_output=True).stdout; self.assertEqual(hashlib.sha256(blob).hexdigest(), hashlib.sha256((r / "Tasks.xlsx").read_bytes()).hexdigest())
+            blob = subprocess.run(["git", "show", "HEAD:" + W("Tasks.xlsx")], cwd=str(r), capture_output=True).stdout; self.assertEqual(hashlib.sha256(blob).hexdigest(), hashlib.sha256((r / W("Tasks.xlsx")).read_bytes()).hexdigest())
             self.assertEqual(data_sync.run(r, push=False, log=lambda *a: None, allow_branch=br)["result"], "CLEAN")
-        finally: data_sync.model_source_paths = lambda: [s["path"] for s in bm_sources.SOURCES if s["currency"] == "CURRENT" and bm_sources.scope(s) == "CONTENT"]
+        finally: data_sync.model_source_paths = lambda: [W(s["path"]) for s in bm_sources.SOURCES if s["currency"] == "CURRENT" and bm_sources.scope(s) == "CONTENT"]
     @covers(*GOV, DS, kinds=("unit", "failure", "adversarial"))
     def test_sync_refuses_product_model_source_unknown_and_wrong_branch(self):
         r, ms, br = _repo("refuse"); h0 = self._head(r); orig = data_sync.model_source_paths; data_sync.model_source_paths = lambda: ms
         try:
-            _mutate_rows(r / "Tasks.xlsx"); (r / ".claude" / "skills" / "x.py").write_text("x = 2\n", encoding="utf-8")
+            _mutate_rows(r / W("Tasks.xlsx")); (r / ".claude" / "skills" / "x.py").write_text("x = 2\n", encoding="utf-8")
             with self.assertRaises(data_sync.SyncError) as cm: data_sync.run(r, push=False, log=lambda *a: None, allow_branch=br)
             self.assertEqual(cm.exception.code, "RELEASE_REQUIRED"); self.assertEqual(self._head(r), h0)
-            (r / ".claude" / "skills" / "x.py").write_text("x = 1\n", encoding="utf-8"); (r / "Actions.md").write_text("# A\n- model source edited\n", encoding="utf-8")
+            (r / ".claude" / "skills" / "x.py").write_text("x = 1\n", encoding="utf-8"); (r / W("Actions.md")).write_text("# A\n- model source edited\n", encoding="utf-8")
             with self.assertRaises(data_sync.SyncError) as cm: data_sync.run(r, push=False, log=lambda *a: None, allow_branch=br)
             self.assertEqual(cm.exception.code, "RELEASE_REQUIRED"); self.assertIn("Actions.md", cm.exception.detail); self.assertEqual(self._head(r), h0)
-            (r / "Actions.md").write_text("# A\n", encoding="utf-8"); (r / "stray.txt").write_text("?", encoding="utf-8")
+            (r / W("Actions.md")).write_text("# A\n", encoding="utf-8"); (r / "stray.txt").write_text("?", encoding="utf-8")
             with self.assertRaises(data_sync.SyncError) as cm: data_sync.run(r, push=False, log=lambda *a: None, allow_branch=br)
             self.assertEqual(cm.exception.code, "UNCLASSIFIED"); self.assertEqual(self._head(r), h0)
             (r / "stray.txt").unlink()
@@ -238,7 +241,7 @@ class L05_LiveDataSync(unittest.TestCase):
         tm.write_checksums(r, r / ".claude" / "policy" / "durable_checksums.json"); subprocess.run(["git", "add", "-A"], cwd=str(r)); subprocess.run(["git", "commit", "-q", "-m", "history"], cwd=str(r))
         keep = f.read_bytes(); h0 = self._head(r)
         try:
-            _mutate_rows(r / "Tasks.xlsx")
+            _mutate_rows(r / W("Tasks.xlsx"))
             with self.assertRaises(data_sync.SyncError) as cm: data_sync.run(r, push=False, log=lambda *a: None, allow_branch=br)
             self.assertEqual(cm.exception.code, "DURABLE_REGRESSION"); self.assertIn("audit", cm.exception.detail)
             self.assertEqual(f.read_bytes(), keep, "versioned durable history must not be rewritten"); self.assertEqual(self._head(r), h0)
@@ -261,10 +264,10 @@ class L06_RecoveryContract(unittest.TestCase):
     @covers(*GOV, DS, kinds=("unit",))
     def test_policy_manifest_and_gitignore_carry_the_live_data_contract(self):
         pol = tm.load_policy(); ld = pol["durability"]["live_data"]
-        self.assertEqual(ld["live_data_files"], ["Tasks.xlsx", "Journal.md", "00_Inbox/Input.md"]); self.assertEqual(ld["live_state_dirs"], [".claude/state/durable"]); self.assertIn("skill.py sync", ld["sync"])
+        self.assertEqual(ld["live_data_files"], [W("Tasks.xlsx"), W("Journal.md"), W("00_Inbox/Input.md")]); self.assertEqual(ld["live_state_dirs"], [".claude/state/durable"]); self.assertIn("skill.py sync", ld["sync"])
         self.assertEqual(tm.check_manifest(), []); m = tm.build(); self.assertEqual(m["policy_version"], pol["policy_version"])
-        paths = {e["path"]: e for e in m["entries"]}; self.assertEqual(paths["Tasks.xlsx"]["durability"], "VERSION_DIRECTLY"); self.assertEqual(paths[".claude/state/durable/actions.jsonl"]["durability"], "VERSION_DIRECTLY")
-        self.assertIn("Tasks.xlsx", tm.durable_files(ROOT)); self.assertIn("Tasks.xlsx", json.loads((ROOT / ".claude" / "policy" / "durable_checksums.json").read_text(encoding="utf-8"))["files"])
+        paths = {e["path"]: e for e in m["entries"]}; self.assertEqual(paths[W("Tasks.xlsx")]["durability"], "VERSION_DIRECTLY"); self.assertEqual(paths[".claude/state/durable/actions.jsonl"]["durability"], "VERSION_DIRECTLY")
+        self.assertIn(W("Tasks.xlsx"), tm.durable_files(ROOT)); self.assertIn(W("Tasks.xlsx"), json.loads((ROOT / ".claude" / "policy" / "durable_checksums.json").read_text(encoding="utf-8"))["files"])
     @covers(*GOV, kinds=("unit",))
     def test_real_workspace_drift_is_reported_never_hidden(self):
         d = data_sync.plan(ROOT); self.assertIn(d["state"], tm.DRIFT_STATES); self.assertIsInstance(d["changes"], dict)

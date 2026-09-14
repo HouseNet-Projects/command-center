@@ -46,9 +46,9 @@
   "test_skills.T02_Router.test_chain_sales_decline"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T17:35:02",
- "fingerprint": "7990ec6e944e1ec9c35d26ad",
- "core_fingerprint": "c346f60bee1463d1",
+ "certified_at": "2026-09-14T19:33:53",
+ "fingerprint": "2704f570ef1fe6502e9e933f",
+ "core_fingerprint": "0af15296acbfd2ed",
  "result": "PASS",
  "suites": [
   "test_skills",

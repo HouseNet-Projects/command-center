@@ -13,7 +13,7 @@ Fail closed: absent/incompatible/uncertified model → BUSINESS_CONTEXT_MISSING;
 Precedence: REFERENCE_APPROVED/CHARTER > ACTIVE_* > EVIDENCE > HISTORICAL; equal-rank disagreement → SOURCE_CONFLICT;
 HISTORICAL never overrides CURRENT. Knowledge from conversation enters only as OBSERVATION (state store), never the core.
 Overrides for tests: COMMAND_CENTER_BUSINESS_DIR (model dir), COMMAND_CENTER_BUSINESS_ROOT (source root)."""
-import json, os, pathlib, re, hashlib, datetime
+import json, os, sys, pathlib, re, hashlib, datetime
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -28,7 +28,13 @@ LAST_ERROR = {"reason": None}
 
 def _norm(t): return re.sub(r"\s+", " ", str(t or "").lower().strip())
 def _dir(): return pathlib.Path(os.environ.get("COMMAND_CENTER_BUSINESS_DIR") or (HERE.parent / "business"))
+sys.path.insert(0, str(HERE.parent / "policy")); import paths        # ONE business-root resolver (workspace_policy.json -> business_root)
+
 def _root(): return pathlib.Path(os.environ.get("COMMAND_CENTER_BUSINESS_ROOT") or ROOT)
+
+def _src(root, rel):
+    """A declared source path is business-relative (bm_sources.py); the business root is resolved in one place."""
+    return paths.resolve(root, rel)
 
 def available():
     d = _dir(); return all((d / f"{f}.json").exists() for f in CORE_FILES)
@@ -80,7 +86,7 @@ def model_state(m=None):
     root = _root()
     for sid, s in snap.items():
         if s.get("currency") != "CURRENT": continue
-        p = root / s["path"]
+        p = _src(root, s["path"])
         if not p.exists(): missing.append(sid); continue
         if s.get("scope") == "STRUCTURE":                                                      # LIVE register: only its structure binds the model; rows are live data read through the integration layer
             try:

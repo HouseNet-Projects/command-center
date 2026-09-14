@@ -12,10 +12,11 @@ sys.path.insert(0, str(HERE))
 for d in ("integrations", "skills", "runtime", "policy"): sys.path.insert(0, str(ROOT / ".claude" / d))
 from testing import covers
 import engine, store, executors, intelligence as IQ, layer, state_snapshot as ssn
+sys.path.insert(0, str(ROOT / '.claude' / 'policy')); import paths as pp   # ONE business-root resolver
 
 TMP = pathlib.Path(tempfile.mkdtemp(prefix="cciq_")); engine.STATE_DIR = TMP / "state"; (TMP / "state").mkdir(parents=True, exist_ok=True); store.reset()
 REG = engine.load_registry(); T = "2026-09-12"
-REAL = ROOT / "Tasks.xlsx"; REAL_SHA = hashlib.sha256(REAL.read_bytes()).hexdigest() if REAL.exists() else None
+REAL = pp.tasks(ROOT); REAL_SHA = hashlib.sha256(REAL.read_bytes()).hexdigest() if REAL.exists() else None
 GUARD = TMP / "Tasks-copy.xlsx"; shutil.copy(REAL, GUARD) if REAL.exists() else None
 os.environ["COMMAND_CENTER_TASKS_XLSX"] = str(GUARD)                                    # HARD GUARD: the write adapter can only ever touch the temp copy
 def setUpModule():

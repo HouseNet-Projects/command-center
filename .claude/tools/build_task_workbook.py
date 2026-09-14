@@ -3,6 +3,9 @@
 Գործարկում՝ 05_Archive/Drafts-2026-09-09/update.bat (legacy) կամ  python .claude/tools/build_task_workbook.py"""
 import sys, os, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "policy"))
+import paths as _paths                                   # ONE business-root resolver
+_BUSINESS_ROOT = _paths.root_name()
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border
 from openpyxl.worksheet.datavalidation import DataValidation
@@ -357,7 +360,7 @@ for i, x in enumerate(QUESTIONS, 2):
     qq.row_dimensions[i].height = 34
 
 wb.active = 0
-out = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "05_Archive", f"Task-workbook-8-sheet-{TODAY.strftime('%Y-%m-%d')}.xlsx")   # LEGACY: Tasks.xlsx is the canonical register
+out = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), _BUSINESS_ROOT, "05_Archive", f"Task-workbook-8-sheet-{TODAY.strftime('%Y-%m-%d')}.xlsx")   # LEGACY: Tasks.xlsx is the canonical register
 wb.save(out)
 print(f"ԱՌԱՋԱԴՐԱՆՔՆԵՐ.xlsx  ·  {len(IN)} ստացված  ·  {len(OUT)} տրված  "
       f"·  {len(LOG)} գրառում  ·  {len(QUESTIONS)} բաց հարց")

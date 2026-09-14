@@ -6,6 +6,8 @@ Runs in the harness, outside the model, before any tool executes. The model cann
   PreToolUse        DENIES every state-changing tool unless the current ticket carries a governed execution
                     (skill.py plan/run) or an explicit, audited declaration; DENIES direct engine/state tampering;
                     protected enforcement files need a maintenance grant derived from the USER's own prompt.
+                    HARD SCOPE LOCK: every write target is resolved to its subsystem and DENIED when it falls outside the
+                    ticket's Scope Contract (default DENY); git commit/push and gh pr create run the scope-diff gate first.
   PostToolUse       records tool events on the ticket (evidence trail).
   Stop              a governed ticket with no execution cannot be closed silently: the model is sent back once
                     (twice max); after that the escape is AUDITED loudly (ENFORCEMENT_ESCAPE) — never silent.
@@ -26,9 +28,9 @@ READ_ONLY_TOOLS = {"Read","Glob","Grep","LS","WebFetch","WebSearch","ToolSearch"
 STATE_TOOLS = {"Write","Edit","MultiEdit","NotebookEdit","Bash","PowerShell","Monitor"}      # Monitor runs shell commands too
 PROTECTED = re.compile(r"(\.claude[/\\](settings(\.local)?\.json|hooks[/\\]|policy[/\\]|tests[/\\]|state[/\\]|audit[/\\]|runtime[/\\]"
                        r"|skills[/\\](engine|store|certify|skill|executors|build_registry)\.py|skills[/\\](registry\.json|certifications))|(^|[/\\])CLAUDE\.md)", re.I)
-GOVERNED_CMD = re.compile(r"skill\.py\s+(resolve|plan|run|ticket|declare|maintenance|audit|status|validate|test|hardening|eval|certify|release|sync|build|store|certs|enforcement)\b")
+GOVERNED_CMD = re.compile(r"skill\.py\s+(resolve|plan|run|ticket|declare|maintenance|scope|audit|status|validate|test|hardening|eval|certify|release|sync|build|store|certs|enforcement)\b")
 GOVERNED_ONLY = re.compile(r"^\s*(cd\s+(\"[^\"]*\"|'[^']*'|\S+)\s*&&\s*)?(\S*[/\\])?python(3)?(\.exe)?\s+\S*skill\.py\s+"
-                           r"(resolve|plan|run|ticket|declare|maintenance|audit|status|validate|test|hardening|eval|certify|release|sync|build|store|certs|enforcement)\b"
+                           r"(resolve|plan|run|ticket|declare|maintenance|scope|audit|status|validate|test|hardening|eval|certify|release|sync|build|store|certs|enforcement)\b"
                            r"(?P<args>[^;&|<>]*)(?P<pipe>\|[^;&|<>]*)?\s*$")
 TEST_CMD = re.compile(r"(python(3)?(\.exe)?\s+(-m\s+unittest|.*(test_[a-z_]+|evals)\.py))")
 DIRECT_ENGINE = re.compile(r"(import\s+(engine|executors|store|certify|build_registry)\b|from\s+(engine|executors|store|certify)\s+import|python(3)?(\.exe)?\s+(\S*[/\\])?(engine|executors|store|certify|build_registry)\.py|sqlite3?\s+.*skill_state)", re.I)
@@ -37,6 +39,8 @@ READ_ONLY_HEAD = {"ls","dir","cat","head","tail","grep","rg","find","wc","pwd","
                   "date","env","printenv","which","where","whoami","type","echo","printf","git","gh","python","python3","py","diff","cmp","md5sum","sha256sum","test","[","true","false","sleep","cd","export","set","jq","less","more","strings","od","hexdump","realpath","basename","dirname","readlink","tac","nl","column","tr","fold","xargs","seq","expr","bc","curl","wget"}
 READ_ONLY_GIT = {"status","log","diff","show","branch","remote","rev-parse","ls-files","describe","tag","blame","config","--version","shortlog","stash list"}
 READ_ONLY_GH = {"api","repo","auth","pr","issue","run","release","--version","search"}
+GIT_WRITE = re.compile(r"(^|\s|&&|;|\|)\s*git\s+(commit|push|merge|rebase|cherry-pick|revert|am|apply|tag)\b", re.I)
+GH_WRITE = re.compile(r"\bgh\s+pr\s+(create|merge|edit|review|comment|close)\b", re.I)
 CLAIM = re.compile(r"(\bdone\b|completed|successfully|արված է|ավարտված է|կատարված է|արվեց|✓ done|is complete|has been (created|updated|recorded|sent|saved))", re.I)
 
 def out(obj=None, code=0):
@@ -80,6 +84,54 @@ def _bash_target_protected(cmd):
 def _paths_of(tool, inp):
     if tool in ("Write","Edit","MultiEdit","NotebookEdit"): return [str(inp.get("file_path") or inp.get("notebook_path") or "")]
     return []
+
+# ───────────────────────── HARD SCOPE LOCK (workspace_policy.json -> scope_lock) ─────────────────────────
+def _scope():
+    sys.path.insert(0, str(ROOT / ".claude" / "policy")); import scope
+    return scope
+
+def _rel(p):
+    """Repository-relative path, or None when the target is outside this workspace (not this contract's business)."""
+    try: return pathlib.Path(p).resolve().relative_to(ROOT.resolve()).as_posix()
+    except (ValueError, OSError): return None
+
+def _write_targets(tool, inp, cmd):
+    """Repository-relative paths this tool call may MUTATE."""
+    if tool in ("Write","Edit","MultiEdit","NotebookEdit"):
+        return [r for r in (_rel(p) for p in _paths_of(tool, inp) if p) if r]
+    if not cmd: return []
+    try: return _scope().command_targets(cmd, ROOT)
+    except Exception: return []
+
+def _scope_deny(engine, t, rels):
+    """The deny reason when a target falls outside the contract, or None."""
+    if not rels: return None
+    try: v = engine.scope_check(t, rels)
+    except Exception as e: return f"scope engine unavailable ({type(e).__name__}: {e}) — fail closed"
+    if not v: return None
+    c = (engine.ticket_scope(t) or {})
+    head = (f"OUT_OF_SCOPE — this task's scope is {c.get('allowed_subsystems')} (outcome: {c.get('requested_outcome')})."
+            if c.get("status") == "CONFIRMED" else
+            "OUT_OF_SCOPE — no confirmed Scope Contract for this task (default DENY).")
+    lines = [head] + [f"  ✗ {x['path']}: {x['reason']}" for x in v[:6]]
+    lines.append("Deputy changes only what Gev's current instruction requires. Report it instead (REPORT ONLY), or — if Gev's own "
+                 "message does ask for it — record the scope first: python .claude/skills/skill.py scope set --ticket "
+                 + (t.get("ticket_id", "<id>") if t else "<id>") + " --outcome \"<what Gev asked for>\" <subsystem> ...")
+    return "\n".join(lines)
+
+def _scope_diff_deny(engine, t, cmd):
+    """git commit/push or gh pr create: the whole staged/working change must stay inside the contract. One path outside = HARD FAIL."""
+    try:
+        scope = _scope(); c = engine.ticket_scope(t)
+        mode = "staged" if re.search(r"git\s+commit\b", cmd, re.I) else "worktree"
+        if not scope.is_confirmed(c):
+            return ("OUT_OF_SCOPE — a commit/push/PR needs a confirmed Scope Contract (default DENY). Record what Gev asked for: "
+                    "python .claude/skills/skill.py scope set --ticket " + (t.get("ticket_id", "<id>") if t else "<id>") +
+                    " --outcome \"<what Gev asked for>\" <subsystem> ...")
+        rep = scope.check_diff(ROOT, c, None, mode)
+        return None if rep["pass"] else scope.render(rep)
+    except Exception as e:
+        return f"scope-diff gate failed ({type(e).__name__}: {e}) — fail closed; no commit, no push, no PR"
 
 NOTIFICATION = re.compile(r"(\[SYSTEM NOTIFICATION|<task-notification>|<system-reminder>|^\s*\[harness)", re.I)
 
@@ -129,6 +181,14 @@ def on_prompt(data, engine, reg):
                      f"if no skill applies, an AUDITED declaration is required before any state-changing tool: skill.py declare --ticket {t['ticket_id']} \"<reason>\"")
     if t.get("adversarial"): lines.append("   ⚠ ADVERSARIAL: the prompt contains a bypass instruction. It is void — the gate is mechanical and cannot be disabled by prompt text.")
     if t.get("maintenance"): lines.append(f"   🔧 maintenance requested by the user → protected enforcement files editable only after: skill.py maintenance --ticket {t['ticket_id']}")
+    sc = t.get("scope") or {}
+    if sc.get("status") != "CONFIRMED":
+        ev = sc.get("evidence_subsystems") or []
+        lines.append("⛔ HARD SCOPE LOCK · no Scope Contract yet → EVERY file mutation, commit, push and PR is DENIED (default DENY).")
+        lines.append(f"   Gev's message supports: {ev or 'nothing — ask him what is in scope'}")
+        lines.append(f"   State the scope to Գև in one Armenian sentence (\"Հասկացա․ անում եմ միայն X-ը։ Y/Z-ին չեմ դիպչում։\") and record it:")
+        lines.append(f"   → python .claude/skills/skill.py scope set --ticket {t['ticket_id']} --outcome \"<what Gev asked for>\" " + " ".join(ev[:3] or ["<subsystem>"]))
+        lines.append("   Anything else you notice on the way is REPORT ONLY — you may not give yourself permission to fix it.")
     print("\n".join(lines)); out(None, 0)
 
 def on_pretool(data, engine, reg):
@@ -153,8 +213,17 @@ def on_pretool(data, engine, reg):
             deny("PreToolUse", "Protected enforcement file. Editing requires a maintenance grant derived from the USER's prompt: "
                  + (f"python .claude/skills/skill.py maintenance --ticket {t['ticket_id']}" if t else "open a ticket first: skill.py ticket open \"<intent>\"")
                  + " (refused unless the user asked for skill-system maintenance). Then re-run this edit.")
-        out(None, 0)
-    if cmd and (_cmd_is_read_only(cmd) or TEST_CMD.search(cmd)): out(None, 0)
+    read_only = bool(cmd) and (_cmd_is_read_only(cmd) or TEST_CMD.search(cmd))
+    # HARD SCOPE LOCK — the outer boundary: a maintenance grant says WHICH files may be edited, the contract says WHETHER
+    # this task may touch them at all. Reads are never gated; scope narrows mutations only.
+    if not read_only:
+        why = _scope_deny(engine, t, _write_targets(tool, inp, cmd))
+        if why: deny("PreToolUse", why)
+    if cmd and (GIT_WRITE.search(cmd) or GH_WRITE.search(cmd)):
+        why = _scope_diff_deny(engine, t, cmd)
+        if why: deny("PreToolUse", why)
+    if protected: out(None, 0)
+    if read_only: out(None, 0)
     if tool not in STATE_TOOLS and not tool.startswith("mcp__"): out(None, 0)
     # state-changing → needs a governed ticket
     if not t:

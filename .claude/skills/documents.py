@@ -8,9 +8,11 @@ The index lives in the local state dir (documents_index.json) and is rebuilt on 
 import re, json, hashlib, datetime, sys, pathlib
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
-sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE)); sys.path.insert(0, str(ROOT / ".claude" / "policy")); import paths        # ONE business-root resolver
 
-AUTHORITY = {"02_Reference": "CURRENT_TRUTH", "01_Active": "WORKING", "03_Completed": "HISTORICAL", "05_Archive": "HISTORICAL", "04_Sources": "RAW_EVIDENCE", ".claude/business": "BUSINESS_MODEL", ".claude/docs": "CHARTER", "": "ROOT"}
+AUTHORITY = {paths.to_repo("02_Reference"): "CURRENT_TRUTH", paths.to_repo("01_Active"): "WORKING", paths.to_repo("03_Completed"): "HISTORICAL",
+             paths.to_repo("05_Archive"): "HISTORICAL", paths.to_repo("04_Sources"): "RAW_EVIDENCE", ".claude/business": "BUSINESS_MODEL",
+             ".claude/docs": "CHARTER", paths.root_name(): "ROOT", "": "ROOT"}
 WEIGHT = {"BUSINESS_MODEL": 3.0, "CURRENT_TRUTH": 2.5, "CHARTER": 2.0, "ROOT": 1.5, "WORKING": 1.5, "RAW_EVIDENCE": 1.0, "HISTORICAL": 0.5}
 TEXT_EXT = {".md", ".txt", ".csv", ".json"}
 STOP = {"the", "a", "an", "of", "to", "in", "on", "and", "or", "for", "is", "it", "we", "with", "by", "at", "as", "be", "և", "ու", "որ", "են", "է", "ա", "մասին", "համար"}
@@ -21,8 +23,9 @@ def _index_path():
     import engine; return pathlib.Path(engine.STATE_DIR) / "documents_index.json"
 
 def _authority(rel):
+    """Authority follows the AREA a document lives in. Both namespaces (.claude and the business root) are two segments deep."""
     parts = rel.replace("\\", "/").split("/")
-    if parts[0] == ".claude" and len(parts) > 1: return AUTHORITY.get(f".claude/{parts[1]}", "TECHNICAL")
+    if parts[0] in (".claude", paths.root_name()) and len(parts) > 1: return AUTHORITY.get(f"{parts[0]}/{parts[1]}", "TECHNICAL" if parts[0] == ".claude" else "ROOT")
     return AUTHORITY.get(parts[0] if len(parts) > 1 else "", "ROOT")
 
 def _title_and_sections(p):
@@ -34,10 +37,10 @@ def _title_and_sections(p):
 def build(root=None):
     """Scan the contract folders; write the index; return it. Content is not stored — only metadata, section names and a small token bag."""
     root = pathlib.Path(root or ROOT); docs = []
-    dirs = [root] + [root / d for d in ("01_Active", "02_Reference", "03_Completed", "04_Sources", "05_Archive")] + [root / ".claude" / "docs", root / ".claude" / "business"]
+    dirs = [paths.root(root)] + [paths.biz(d, repo_root=root) for d in ("01_Active", "02_Reference", "03_Completed", "04_Sources", "05_Archive")] + [root / ".claude" / "docs", root / ".claude" / "business"]
     for d in dirs:
         if not d.exists(): continue
-        it = d.glob("*") if d == root else d.rglob("*")
+        it = d.glob("*") if d == paths.root(root) else d.rglob("*")     # the business root itself holds only the registers; areas are recursive
         for p in it:
             if not p.is_file() or p.name.startswith(".") or "__pycache__" in p.parts or p.suffix.lower() not in TEXT_EXT | {".docx", ".xlsx", ".pdf"}: continue
             if d == root / ".claude" / "business" and p.suffix != ".md": continue

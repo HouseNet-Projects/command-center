@@ -9,6 +9,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE)); sys.path.insert(0, str(ROOT / ".claude" / "skills")); sys.path.insert(0, str(ROOT / ".claude" / "business")); sys.path.insert(0, str(ROOT / ".claude" / "policy"))
 from testing import covers
+sys.path.insert(0, str(ROOT / '.claude' / 'policy')); import paths as pp   # ONE business-root resolver
+def W(rel): return pp.to_repo(rel)
 import engine, executors, store, business
 
 TMP = pathlib.Path(tempfile.mkdtemp(prefix="skillbiz_")); engine.STATE_DIR = TMP / "state"; store.reset()
@@ -24,14 +26,15 @@ def _meta(layer="CORE", **kw):
 def synthetic(d, overlay=True, schema="2.0", stale_source=False, missing_source=False, certified=True):
     """Minimal valid two-layer model: S01 (Reference, approved) S02/S03 (Active drafts) S09 (Historical); one conflict; one unknown owner.
     Source files are created under d/src so staleness can be exercised."""
-    root = d / "src"; (root / "02_Reference").mkdir(parents=True); (root / "01_Active").mkdir(parents=True); (root / "05_Archive").mkdir(parents=True)
+    root = d / "src"
+    for a in ("02_Reference", "01_Active", "05_Archive"): (root / W(a)).mkdir(parents=True)
     files = {"S01": "02_Reference/X.xlsx", "S02": "01_Active/Y.docx", "S03": "01_Active/Z.docx", "S09": "05_Archive/old.md"}
-    for sid, rel in files.items(): (root / rel).write_bytes(f"content {sid}".encode())
+    for sid, rel in files.items(): (root / W(rel)).write_bytes(f"content {sid}".encode())
     snap = {}
     for sid, rel in files.items():
-        p = root / rel; st = p.stat(); snap[sid] = {"path": rel, "sha256": hashlib.sha256(p.read_bytes()).hexdigest(), "size": st.st_size, "mtime": int(st.st_mtime), "currency": "HISTORICAL" if sid == "S09" else "CURRENT", "authority": "HISTORICAL" if sid == "S09" else ("REFERENCE_APPROVED" if sid == "S01" else "ACTIVE_DRAFT")}
-    if stale_source: (root / files["S01"]).write_bytes(b"CHANGED staffing plan"); os.utime(root / files["S01"], (1, 1))
-    if missing_source: (root / files["S02"]).unlink()
+        p = root / W(rel); st = p.stat(); snap[sid] = {"path": rel, "sha256": hashlib.sha256(p.read_bytes()).hexdigest(), "size": st.st_size, "mtime": int(st.st_mtime), "currency": "HISTORICAL" if sid == "S09" else "CURRENT", "authority": "HISTORICAL" if sid == "S09" else ("REFERENCE_APPROVED" if sid == "S01" else "ACTIVE_DRAFT")}
+    if stale_source: (root / W(files["S01"])).write_bytes(b"CHANGED staffing plan"); os.utime(root / W(files["S01"]), (1, 1))
+    if missing_source: (root / W(files["S02"])).unlink()
     S = lambda sid, auth, cur, status, conf: {"source_id": sid, "path": files[sid], "title": sid, "authority": auth, "currency": cur, "status": status, "conflicts": conf, "domain": "T", "effective_date": "UNKNOWN", "date": "2026-09-09", "owner": "Gev", "source_type": "x", "notes": ""}
     sources = {"meta": _meta(schema_version=schema), "authority_rank": {"REFERENCE_APPROVED": 5, "CHARTER": 5, "ACTIVE_REGISTER": 4, "ACTIVE_DRAFT": 3, "PROPOSAL": 3, "EVIDENCE": 2, "HISTORICAL": 1}, "source_snapshot": snap,
                "sources": [S("S01", "REFERENCE_APPROVED", "CURRENT", "APPROVED", ["C01"]), S("S02", "ACTIVE_DRAFT", "CURRENT", "DRAFT", ["C01"]), S("S03", "ACTIVE_DRAFT", "CURRENT", "DRAFT", []), S("S09", "HISTORICAL", "HISTORICAL", "SUPERSEDED", [])]}
@@ -253,10 +256,10 @@ class B08_RealModel(unittest.TestCase):
         # tampered copy of the workspace: strategy doc replaced by an empty docx, task register truncated → invariants must fail, fingerprint alone would not
         tmp = pathlib.Path(tempfile.mkdtemp(prefix="biztamper_"))
         for s in bm_sources.SOURCES:
-            src = ROOT / s["path"]
-            if src.exists(): (tmp / s["path"]).parent.mkdir(parents=True, exist_ok=True); shutil.copy(src, tmp / s["path"])
-        import docx; d = docx.Document(); d.add_paragraph("empty"); d.save(tmp / "01_Active/Sales/Sales-strategy-2026-09-09.docx")
-        (tmp / "01_Active/Operations/Open-questions.md").write_text("# nothing\n", encoding="utf-8")
+            rel = W(s["path"]); src = ROOT / rel
+            if src.exists(): (tmp / rel).parent.mkdir(parents=True, exist_ok=True); shutil.copy(src, tmp / rel)
+        import docx; d = docx.Document(); d.add_paragraph("empty"); d.save(tmp / W("01_Active/Sales/Sales-strategy-2026-09-09.docx"))
+        (tmp / W("01_Active/Operations/Open-questions.md")).write_text("# nothing\n", encoding="utf-8")
         probs = bb.invariant_checks(tmp)
         self.assertTrue(any(x.startswith("S03") for x in probs), probs); self.assertTrue(any(x.startswith("S10") for x in probs), probs)
         with self.assertRaises(bb.BuildError) as cm: bb.build(root=tmp)

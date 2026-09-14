@@ -11,6 +11,7 @@ and writes it back; engine.validate_registry() rejects any L3+ skill whose per-s
 failed, or stale (fingerprint mismatch after a contract/implementation change).
 """
 import json, pathlib, datetime, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "policy")); import paths        # ONE business-root resolver
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "runtime")); import python_runtime; python_runtime.ensure()        # deterministic project interpreter (<root>/.venv)
@@ -37,7 +38,7 @@ TOOL_INTENTS = {
     "scheduler":   ("set a timer", "schedule a job", "cron"),
 }
 
-XLSX = "Tasks.xlsx"
+XLSX = paths.to_repo("Tasks.xlsx")            # WORKSPACE/Tasks.xlsx — resolved against the declared business root
 CORE_TOOLS = ("python", "filesystem", "xlsx", "audit_log")
 STATE_TOOLS = ("python", "filesystem", "state_store", "audit_log")
 XLSX_POLICY = {"max_age_hours": 24 * 14}      # tracker older than 14 days → STALE_SOURCE unless accept_stale acknowledged

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """LIVE DATA SYNC — the lightweight durability path for LIVE OPERATIONAL DATA and durable runtime state (policy durability.live_data):
-Tasks.xlsx · Journal.md · 00_Inbox/Input.md · business documents that are not model extraction sources · .claude/state/durable/* ·
+WORKSPACE/Tasks.xlsx · WORKSPACE/Journal.md · WORKSPACE/00_Inbox/Input.md · business documents that are not model extraction sources · .claude/state/durable/* ·
 .claude/policy/durable_checksums.json. Reuses the existing primitives (tree_manifest checksums/classification, state_snapshot export,
 business.model_state, certify_business) — no second integrity system.
 
@@ -33,8 +33,8 @@ def _git(args, root, check=True):
 def model_source_paths():
     """Paths of CONTENT-scoped (extracted) business-model sources: a change there is a MODEL change (release), never live data."""
     try:
-        import bm_sources
-        return [s["path"] for s in bm_sources.SOURCES if s["currency"] == "CURRENT" and bm_sources.scope(s) == "CONTENT"]
+        import bm_sources, paths
+        return [paths.to_repo(s["path"]) for s in bm_sources.SOURCES if s["currency"] == "CURRENT" and bm_sources.scope(s) == "CONTENT"]
     except Exception: return []
 
 def plan(root=ROOT):

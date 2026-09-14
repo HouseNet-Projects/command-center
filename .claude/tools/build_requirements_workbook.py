@@ -8,6 +8,9 @@
 """
 import sys, os, datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "policy"))
+import paths as _paths                                   # ONE business-root resolver
+_BUSINESS_ROOT = _paths.root_name()
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border
 from openpyxl.worksheet.datavalidation import DataValidation
@@ -219,7 +222,7 @@ c.font = Font(name="Calibri", size=9, italic=True, color=MUTED)
 ws.merge_cells(start_row=END + 2, start_column=2, end_row=END + 2, end_column=8)
 
 wb.active = 0
-out = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "05_Archive",
+out = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), _BUSINESS_ROOT, "05_Archive",
                    f"@P1-requirements-{TODAY.strftime('%Y-%m-%d')}.xlsx")   # LEGACY output: superseded by Tasks.xlsx (05_Archive keeps history)
 wb.save(out)
 print(f"{os.path.basename(out)}  ·  {len(DEMANDS)} կետ  ·  "

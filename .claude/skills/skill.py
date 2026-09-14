@@ -7,6 +7,10 @@
   skill.py ticket  open "<prompt>" | show [id] | current | close <id> <verdict>
   skill.py declare [--ticket T] "<reason>"          audited UNGOVERNED declaration (refused if a skill resolved / prompt adversarial)
   skill.py maintenance [--ticket T]                 grant protected-file edits (only if the USER asked for skill-system maintenance)
+  skill.py scope show | set | extend | check        HARD SCOPE LOCK — the Scope Contract of the current task
+      scope set    [--ticket T] --outcome "<what Gev asked for>" <subsystem> [<subsystem> ...]
+      scope extend [--ticket T] --outcome "<...>"  <subsystem> ...   (only with evidence in GEV'S OWN message)
+      scope check  [--staged|--worktree]                              scope-diff gate before commit/push/PR
   skill.py audit [n] | audit export <path>          hardened audit trail
   skill.py store check | recover | export <table> <path>
   skill.py certs [skill_id]                         per-skill certification status (fresh / stale / missing)
@@ -94,6 +98,25 @@ def main(argv):
         if not tid: print("no open ticket"); return 2
         r = engine.declare_ungoverned(tid, reason); print(_j(r)); return 0 if r["status"] == "DECLARED" else 2
 
+    if cmd == "scope":
+        sub = rest[0] if rest else "show"; rest = rest[1:]
+        tid = _ticket_id(rest)
+        if sub == "check":
+            import subprocess as sp
+            mode = "--staged" if "--staged" in rest else "--worktree"
+            return sp.call([sys.executable, str(HERE.parent / "policy" / "scope.py"), mode], cwd=str(HERE.parent.parent))
+        if sub == "show":
+            t = engine.get_ticket(tid) if tid else None
+            print(_j(engine.ticket_scope(t) or {"status": "NONE", "reason": "no open ticket"})); return 0 if t else 2
+        if sub in ("set", "extend"):
+            outcome = _opt(rest, "--outcome") or ""
+            ops = (_opt(rest, "--operations") or "").replace(",", " ").split() or None
+            subs = [r for r in rest if not r.startswith("--")]
+            if not tid: print("no open ticket"); return 2
+            r = engine.set_scope(tid, outcome, subs, operations=ops, extend=(sub == "extend"))
+            print(_j(r)); return 0 if r["status"] == "CONFIRMED" else 2
+        print(__doc__); return 1
+
     if cmd == "maintenance":
         tid = _ticket_id(rest)
         if not tid: print("no open ticket"); return 2
@@ -143,7 +166,7 @@ def main(argv):
         return 0
 
     if cmd == "test":
-        return subprocess.call([sys.executable, "-m", "unittest", "-v", "test_skills", "test_store", "test_failclosed", "test_enforcement", "test_workspace", "test_runtime", "test_business", "test_boundary", "test_integrations", "test_portability", "test_actions", "test_live_data", "test_intelligence", "test_outlook_write"], cwd=str(HERE.parent / "tests"))
+        return subprocess.call([sys.executable, "-m", "unittest", "-v", "test_skills", "test_store", "test_failclosed", "test_enforcement", "test_workspace", "test_scope", "test_runtime", "test_business", "test_boundary", "test_integrations", "test_portability", "test_actions", "test_live_data", "test_intelligence", "test_outlook_write"], cwd=str(HERE.parent / "tests"))
     if cmd == "hardening":
         return subprocess.call([sys.executable, "-m", "unittest", "-v", "test_hardening"], cwd=str(HERE.parent / "tests"))
     if cmd == "eval":

@@ -8,6 +8,8 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 for d in ("integrations", "skills", "runtime", "policy"): sys.path.insert(0, str(ROOT / ".claude" / d))
 from testing import covers
+sys.path.insert(0, str(ROOT / '.claude' / 'policy')); import paths as pp   # ONE business-root resolver
+def W(rel): return pp.to_repo(rel)
 import engine, store, executors, layer
 import people as PP, kpis as KP, decisions as DM, commitments as CM, alerts as AL, documents as DOC, routines as RT, untrusted as UT, channels as CH
 
@@ -222,13 +224,14 @@ class B01_DocumentsRoutinesRouting(unittest.TestCase):
     def setUp(self): fresh()
     @covers("information_retrieval", *GOV, kinds=("unit", "adversarial"))
     def test_document_brain_is_rebuildable_authority_labelled_and_surfaces_conflicts(self):
-        root = TMP / f"docs-{time.time_ns()}"; (root / "02_Reference").mkdir(parents=True); (root / "01_Active" / "Sales").mkdir(parents=True); (root / "05_Archive").mkdir(); (root / "04_Sources").mkdir(); (root / "00_Inbox").mkdir(); (root / "03_Completed").mkdir()
-        (root / "02_Reference" / "Sales-strategy-v1.0-2026-09-01.md").write_text("# Sales strategy\n## Targets\nD2D 10 packages per agent\n", encoding="utf-8")
-        (root / "01_Active" / "Sales" / "Sales-strategy-v1.1-2026-09-10.md").write_text("# Sales strategy\n## Targets\nD2D 12 packages per agent — proposal\n", encoding="utf-8")
-        (root / "05_Archive" / "Sales-strategy-2026-01-01.md").write_text("# Sales strategy old\nD2D 8 packages\n", encoding="utf-8"); (root / "Journal.md").write_text("# Journal\nmoved sales strategy\n", encoding="utf-8")
+        root = TMP / f"docs-{time.time_ns()}"
+        for a in ("02_Reference", "01_Active/Sales", "05_Archive", "04_Sources", "00_Inbox", "03_Completed"): (root / W(a)).mkdir(parents=True)
+        (root / W("02_Reference/Sales-strategy-v1.0-2026-09-01.md")).write_text("# Sales strategy\n## Targets\nD2D 10 packages per agent\n", encoding="utf-8")
+        (root / W("01_Active/Sales/Sales-strategy-v1.1-2026-09-10.md")).write_text("# Sales strategy\n## Targets\nD2D 12 packages per agent — proposal\n", encoding="utf-8")
+        (root / W("05_Archive/Sales-strategy-2026-01-01.md")).write_text("# Sales strategy old\nD2D 8 packages\n", encoding="utf-8"); (root / W("Journal.md")).write_text("# Journal\nmoved sales strategy\n", encoding="utf-8")
         idx = DOC.build(root); self.assertEqual(idx["count"], 4); by = {d["path"]: d for d in idx["documents"]}
-        self.assertEqual(by["02_Reference/Sales-strategy-v1.0-2026-09-01.md"]["authority"], "CURRENT_TRUTH"); self.assertEqual(by["05_Archive/Sales-strategy-2026-01-01.md"]["authority"], "HISTORICAL"); self.assertFalse(by["05_Archive/Sales-strategy-2026-01-01.md"]["current"])
-        self.assertEqual(by["02_Reference/Sales-strategy-v1.0-2026-09-01.md"]["version"], "1.0"); self.assertEqual(by["02_Reference/Sales-strategy-v1.0-2026-09-01.md"]["sections"], ["Sales strategy", "Targets"])
+        self.assertEqual(by[W("02_Reference/Sales-strategy-v1.0-2026-09-01.md")]["authority"], "CURRENT_TRUTH"); self.assertEqual(by[W("05_Archive/Sales-strategy-2026-01-01.md")]["authority"], "HISTORICAL"); self.assertFalse(by[W("05_Archive/Sales-strategy-2026-01-01.md")]["current"])
+        self.assertEqual(by[W("02_Reference/Sales-strategy-v1.0-2026-09-01.md")]["version"], "1.0"); self.assertEqual(by[W("02_Reference/Sales-strategy-v1.0-2026-09-01.md")]["sections"], ["Sales strategy", "Targets"])
         s = DOC.search("sales strategy targets d2d", idx=idx); self.assertEqual(s["hits"][0]["authority"], "CURRENT_TRUTH"); self.assertTrue(s["historical_hits"]); self.assertEqual(len(s["conflicts"]), 1); self.assertEqual(s["conflicts"][0]["subject"], "sales strategy")
         self.assertTrue(s["business_model_first"]); self.assertEqual(s["business_model_first"][0]["kind"], "KPI")
         p = DOC._index_path(); self.assertTrue(p.exists()); p.unlink(); self.assertTrue(DOC.load()["count"] >= 1)                                   # rebuildable, nothing lost

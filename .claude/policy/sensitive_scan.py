@@ -113,10 +113,18 @@ def scan_range(rng, root=ROOT, pol=None, names=None):
     return report
 
 HOOK_PRE_COMMIT = """#!/usr/bin/env bash
-# Command-center boundary: RESTRICTED material (credentials, keys, secrets) never enters the repository (installed by sensitive_scan.py --install-hooks)
+# Command-center pre-commit — two decisive gates, in order:
+#   1 BOUNDARY    RESTRICTED material (credentials, keys, secrets) never enters the repository
+#   2 HARD SCOPE  the staged change must stay inside the Scope Contract of the current task (workspace_policy.json -> scope_lock);
+#                 one out-of-scope path = HARD FAIL, so a change Gev did not ask for cannot reach a commit, a push or a PR.
+# Installed by sensitive_scan.py --install-hooks.
 R="$(git rev-parse --show-toplevel)"
 P="$R/.venv/Scripts/python.exe"; [ -x "$P" ] || P="$R/.venv/bin/python"; [ -x "$P" ] || P=python
-exec "$P" "$R/.claude/policy/sensitive_scan.py" --staged
+"$P" "$R/.claude/policy/sensitive_scan.py" --staged || exit $?
+# The scope gate applies where the scope engine lives. Its EXISTENCE in this repository is guaranteed by the tree manifest
+# (workspace_policy.json -> scope_lock.enforcement_files), so a missing file here means "not a Command-center clone", not "skip the rule".
+[ -f "$R/.claude/policy/scope.py" ] || exit 0
+exec "$P" "$R/.claude/policy/scope.py" --staged
 """
 HOOK_PRE_PUSH = """#!/usr/bin/env bash
 # Command-center boundary (pre-push): scan every commit about to leave this machine, then hand the SAME ref list to Git LFS so the
@@ -154,8 +162,10 @@ def install_hooks(root=ROOT):
     return True
 
 def hooks_installed(root=ROOT):
+    """Both gates must be installed: the credential boundary on commit and push, and the scope-diff gate on commit."""
     hooks = pathlib.Path(root) / ".git" / "hooks"
-    return all((hooks / n).exists() and "sensitive_scan.py" in (hooks / n).read_text(encoding="utf-8", errors="replace") for n in ("pre-commit", "pre-push"))
+    if not all((hooks / n).exists() and "sensitive_scan.py" in (hooks / n).read_text(encoding="utf-8", errors="replace") for n in ("pre-commit", "pre-push")): return False
+    return "scope.py" in (hooks / "pre-commit").read_text(encoding="utf-8", errors="replace")
 
 def report(rep, title, pol=None):
     pol = pol or load_policy(); block = blocking(rep, pol)

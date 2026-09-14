@@ -14,11 +14,12 @@ HERE = pathlib.Path(__file__).resolve().parent
 DEFAULT_ROOT = HERE.parent.parent
 POLICY_PATH = HERE / "workspace_policy.json"
 sys.path.insert(0, str(HERE.parent / "runtime")); import python_runtime; python_runtime.ensure()        # deterministic project interpreter (<root>/.venv)
+sys.path.insert(0, str(HERE)); import paths                                                            # ONE business-root resolver (workspace_policy.json -> business_root)
 
 class PolicyError(Exception): pass
 
 # ───────────────────────── policy ─────────────────────────
-REQUIRED_TOP = ["policy_version", "naming", "reserved_technical_names", "root", "canonical_files", "directories", "generated_exclusions", "semantics", "links"]
+REQUIRED_TOP = ["policy_version", "business_root", "naming", "reserved_technical_names", "root", "canonical_files", "directories", "generated_exclusions", "semantics", "links", "scope_lock"]
 
 def load_policy(path=POLICY_PATH):
     try: pol = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
@@ -47,12 +48,59 @@ def validate_policy(pol):
     if not set(root.get("required_dirs", [])) <= set(root.get("allowed_dirs", [])): p.append("root.required_dirs not subset of allowed_dirs")
     for d in root.get("required_dirs", []):
         if d not in pol["directories"]: p.append(f"required dir {d} has no directory contract")
+    p += validate_business_root(pol)
     need = {"kind", "purpose"}
     for name, d in pol["directories"].items():
         if not need <= set(d): p.append(f"directories.{name}: missing {need - set(d)}")
         for sub in d.get("fixed_subdirs", []):
-            rx = pol["naming"]["technical_filename_regex"] if name.startswith(".claude") else pol["naming"]["business_folder_regex"]   # technical subtree vs business tree
-            if not re.match(rx, sub) and not sub.startswith("."): p.append(f"directories.{name}: fixed_subdir {sub} violates folder naming")
+            technical = name.startswith(".claude")
+            ok = re.match(pol["naming"]["technical_filename_regex"] if technical else pol["naming"]["business_folder_regex"], sub) or                  (not technical and re.match(pol["naming"]["ordered_top_level_regex"], sub))          # the six ordered business areas
+            if not ok and not sub.startswith("."): p.append(f"directories.{name}: fixed_subdir {sub} violates folder naming")
+    p += validate_scope_policy(pol)
+    return p
+
+def validate_business_root(pol):
+    """GEV'S WORKING SURFACE is one folder. When business_root is declared, the business areas and registers must live under it
+    and nowhere else: a second home for Tasks.xlsx or 01_Active is exactly how the two roots start to blur."""
+    br = pol.get("business_root")
+    if br is None: return []                                                   # legacy layout (areas at the repository root)
+    br = str(br).strip(); rt = pol["root"]; p = []
+    if not br or "/" in br or "\\" in br: return ["business_root must be a single directory name (Gev's working surface)"]
+    if br not in rt.get("allowed_dirs", []) or br not in rt.get("required_dirs", []): p.append(f"business_root {br} must be a required top-level directory")
+    if br not in pol.get("directories", {}): p.append(f"business_root {br} has no directory contract")
+    for f in rt.get("allowed_files", []):
+        if f in ("Tasks.xlsx", "Journal.md", "Actions.md"): p.append(f"root.allowed_files still carries the business register {f} - it belongs under {br}/")
+    for d in rt.get("allowed_dirs", []):
+        if re.match(pol["naming"]["ordered_top_level_regex"], d): p.append(f"root.allowed_dirs still carries the business area {d} - it belongs under {br}/")
+    for area in pol.get("directories", {}):
+        if re.match(pol["naming"]["ordered_top_level_regex"], area): p.append(f"directories.{area} is not under {br}/ - the business tree has one home")
+    return p
+
+SCOPE_REQUIRED = ("law", "default", "owner", "contract_fields", "confirmation", "self_extension", "report_only",
+                  "dependency_rule", "implementation_detail", "operations", "default_operations", "subsystems", "enforcement")
+
+def validate_scope_policy(pol):
+    """HARD SCOPE LOCK - Deputy changes only what Gev's current instruction requires. Fails CLOSED: a hollowed-out section is a
+    violation, because an unenforceable scope rule is the same as no scope rule. (Absence is caught by REQUIRED_TOP.)"""
+    sc = pol.get("scope_lock")
+    if sc is None: return []
+    p = []
+    if not isinstance(sc, dict) or not sc: return ["POLICY: scope_lock is empty - Deputy's execution boundary would be unenforceable"]
+    for k in SCOPE_REQUIRED:
+        if not sc.get(k): p.append(f"POLICY: scope_lock.{k} missing")
+    if sc.get("default") != "DENY": p.append("POLICY: scope_lock.default must be 'DENY' (nothing is in scope unless Gev asked for it)")
+    if "cannot give itself permission" not in (sc.get("law") or ""): p.append("POLICY: scope_lock.law must keep Deputy from granting itself permission")
+    if "FORBIDDEN" not in (sc.get("self_extension") or ""): p.append("POLICY: scope_lock.self_extension must forbid Deputy widening its own scope")
+    subs = sc.get("subsystems")
+    if not isinstance(subs, dict) or len(subs) < 5: p.append("POLICY: scope_lock.subsystems must name the mutation surfaces")
+    else:
+        for name, d in subs.items():
+            if not isinstance(d, dict) or not d.get("paths") or not d.get("evidence"): p.append(f"POLICY: scope_lock.subsystems.{name} needs paths + evidence")
+    enf = sc.get("enforcement") or {}
+    for k in ("mutation_gate", "git_gate", "tests"):
+        if not enf.get(k): p.append(f"POLICY: scope_lock.enforcement.{k} missing - the rule would rest on memory")
+    if not sc.get("enforcement_files"): p.append("POLICY: scope_lock.enforcement_files missing - the machinery would not be a required path")
+    if not (sc.get("mirror_files") or {}).get("CLAUDE.md"): p.append("POLICY: scope_lock.mirror_files must make CLAUDE.md state the rule for the agent")
     return p
 
 # ───────────────────────── naming checks (single source of rules) ─────────────────────────
@@ -90,16 +138,36 @@ def _is_garbage(name, pol):
 
 def _rel(root, p): return pathlib.Path(p).resolve().relative_to(pathlib.Path(root).resolve()).as_posix()
 
-def _area(rel):
+def _area(rel, pol=None):
     parts = rel.split("/")
-    if parts[0] == ".claude" and len(parts) > 1: return ".claude/" + parts[1]
+    namespaces = {".claude"} | ({str(pol.get("business_root"))} if pol and pol.get("business_root") else set())
+    if parts[0] in namespaces and len(parts) > 1: return parts[0] + "/" + parts[1]
     return parts[0]
+
+BUSINESS_KINDS = ("inbox", "active-work", "reference", "completed", "sources", "archive")
+
+def _areas_by_kind(pol, *kinds):
+    """Repository-relative directory keys whose contract declares one of these kinds (policy-driven, never hard-coded names)."""
+    return [a for a, d in pol.get("directories", {}).items() if d.get("kind") in kinds]
+
+def _business_parts(rel, pol):
+    """(area_key, parts_relative_to_the_business_root) for a business path, else (None, None).
+    Works with and without a declared business_root, so the contract itself decides where the business tree lives."""
+    parts = rel.split("/"); br = (pol.get("business_root") or "").strip("/")
+    if br:
+        if parts[0] != br or len(parts) < 2: return None, None
+        sub = parts[1:]; area = br + "/" + sub[0]
+    else:
+        sub = parts; area = sub[0]
+    return (area, sub) if pol.get("directories", {}).get(area, {}).get("kind") in BUSINESS_KINDS else (None, None)
 
 def _matches_any(name, patterns): return any(re.search(p, name) for p in patterns)
 
 # ───────────────────────── single-path check (guard + validator share it) ─────────────────────────
 def check_path(path, pol, root=DEFAULT_ROOT, is_dir=None):
-    """Violations for ONE prospective or existing path inside the workspace. Used by workspace_guard before a write."""
+    """Violations for ONE prospective or existing path inside the workspace. Used by workspace_guard before a write.
+    Business rules are dispatched by the CONTRACT KIND of the directory, never by a hard-coded folder name, so the whole
+    business tree can live under the business root (WORKSPACE/) without a second rule set."""
     root = pathlib.Path(root).resolve(); p = pathlib.Path(path)
     p = (root / p) if not p.is_absolute() else p
     try: rel = p.resolve().relative_to(root).as_posix()
@@ -109,17 +177,15 @@ def check_path(path, pol, root=DEFAULT_ROOT, is_dir=None):
     if _is_ignored(name, pol) and name != "desktop.ini": return []
     if name in pol["reserved_technical_names"]["anywhere_files"]: return []
     if _is_garbage(name, pol): v.append(f"{rel}: generated garbage name")
-    top = parts[0]; rt = pol["root"]
+    top = parts[0]; rt = pol["root"]; br = (pol.get("business_root") or "").strip("/")
     if len(parts) == 1:
         if is_dir:
             if top not in rt["allowed_dirs"]: v.append(f"{rel}: unknown top-level directory (allowed: {rt['allowed_dirs']})")
         elif name not in rt["allowed_files"]: v.append(f"{rel}: unknown top-level file (allowed: {rt['allowed_files']})")
         return v
     if top not in rt["allowed_dirs"]: v.append(f"{rel}: under unknown top-level directory {top}"); return v
-    area = _area(rel); dc = pol["directories"].get(area) or pol["directories"].get(top, {})
-    kind = dc.get("kind", "")
     sem = pol["semantics"]
-    # semantic placement
+    # semantic placement (repository-relative: the policy states the full canonical prefixes)
     if not is_dir:
         if _matches_any(name, sem["code_markers"]["patterns"]) and rel not in sem["code_markers"].get("root_exceptions", []) and not any(rel.startswith(a + "/") for a in sem["code_markers"]["must_live_under"]):
             v.append(f"{rel}: code may only live under {sem['code_markers']['must_live_under']}")
@@ -127,63 +193,80 @@ def check_path(path, pol, root=DEFAULT_ROOT, is_dir=None):
             v.append(f"{rel}: runtime/state file may only live under {sem['runtime_markers']['must_live_under']}")
         if _matches_any(name, sem["test_markers"]["patterns"]) and not any(rel.startswith(a + "/") for a in sem["test_markers"]["must_live_under"]):
             v.append(f"{rel}: tests may only live under {sem['test_markers']['must_live_under']}")
-        if _matches_any(name, sem["source_markers"]["patterns"]) and not (rel.startswith("04_Sources/") or rel.startswith("05_Archive/") or rel.startswith("00_Inbox/")):
-            v.append(f"{rel}: raw source/media may only live under 04_Sources (or 05_Archive)")
-    # area rules
-    if top == "00_Inbox":
-        if is_dir: v.append(f"{rel}: subdirectories are forbidden in 00_Inbox")
+        raw_ok = [sem["source_markers"]["must_live_under"]] + _areas_by_kind(pol, "archive", "inbox")
+        if _matches_any(name, sem["source_markers"]["patterns"]) and not any(rel.startswith(a + "/") for a in raw_ok):
+            v.append(f"{rel}: raw source/media may only live under {sem['source_markers']['must_live_under']} (or the archive)")
+    # ── the business root itself: only the canonical areas and the live registers ──
+    if br and top == br and len(parts) == 2:
+        wc = pol["directories"].get(br, {})
+        if is_dir and name not in wc.get("fixed_subdirs", []): v.append(f"{rel}: only the canonical business areas live in {br}: {wc.get('fixed_subdirs', [])}")
+        if not is_dir and name not in wc.get("allowed_files", []): v.append(f"{rel}: only the live registers live directly in {br}: {wc.get('allowed_files', [])}")
         return v
-    if top in ("01_Active", "02_Reference", "04_Sources"):
-        fixed = dc.get("fixed_subdirs", [])
-        if len(parts) == 2 and is_dir and name not in fixed: v.append(f"{rel}: only fixed subdomains allowed in {top}: {fixed}")
-        if len(parts) == 2 and not is_dir: v.append(f"{rel}: files must live inside a subdomain of {top} {fixed}")
-        if len(parts) >= 3 and parts[1] not in fixed: v.append(f"{rel}: unknown subdomain {parts[1]} (allowed {fixed})")
-        if top == "04_Sources":
-            if len(parts) == 3 and is_dir and not re.match(dc["source_naming"]["folder_regex"], name): v.append(f"{rel}: source folder must be Name-YYYY-MM-DD[-suffix]")
-            if not is_dir and not (_rx(pol, "technical_filename_regex").match(name) or not check_business_name(name, pol)): v.append(f"{rel}: source file name must be technical (no spaces/parentheses) or business form")
-            if not is_dir and (_matches_any(name, sem["code_markers"]["patterns"]) or _matches_any(name, sem["runtime_markers"]["patterns"])): v.append(f"{rel}: runtime code inside 04_Sources")
-            return v
-        if len(parts) >= 3 and top in ("01_Active", "02_Reference"):
-            if is_dir and len(parts) >= 3: v.append(f"{rel}: arbitrary subdirectories are forbidden in {top}")
-            if not is_dir:
-                v += [f"{rel}: {x}" for x in check_business_name(name, pol)]
-                ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
-                if dc.get("allowed_extensions") != "*" and ext not in dc.get("allowed_extensions", []): v.append(f"{rel}: extension .{ext} not allowed in {top}")
-        return v
-    if top in ("03_Completed", "05_Archive"):
-        # sealed historical packages keep their ORIGINAL names: an archive is evidence, and renaming it destroys provenance
-        if top == "05_Archive" and len(parts) >= 2 and parts[1] in dc.get("verbatim_subdirs", []): return v
-        if is_dir: v += [f"{rel}: {x}" for x in check_business_name(name, pol, is_dir=True)]
-        else:
-            ok_business = not check_business_name(name, pol)
-            ok_tech = top == "05_Archive" and not check_technical_name(name, pol) and not re.search(r"\s|[()]", name)
-            if not (ok_business or ok_tech): v += [f"{rel}: {x}" for x in check_business_name(name, pol)]
-            if top == "03_Completed":
-                ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
-                if ext not in dc.get("allowed_extensions", []): v.append(f"{rel}: extension .{ext} not allowed in 03_Completed")
-        return v
+    area, bparts = _business_parts(rel, pol)
+    if area:
+        return v + _check_business(rel, bparts, name, is_dir, pol, area)
     if top == ".claude":
+        a = _area(rel, pol)
         if len(parts) == 2:
             fixed = pol["directories"][".claude"].get("fixed_subdirs", []) + pol["directories"][".claude"].get("optional_subdirs", [])
             if is_dir and name not in fixed and name not in ("__pycache__",): v.append(f"{rel}: unknown .claude subdirectory (allowed {fixed})")
             if not is_dir and name not in pol["directories"][".claude"].get("allowed_files", []): v.append(f"{rel}: unknown file in .claude root (allowed {pol['directories']['.claude'].get('allowed_files')})")
             return v
-        sub = pol["directories"].get(area, {})
+        sub = pol["directories"].get(a, {})
         if is_dir:
-            if sub.get("subdirs") == "forbidden" and name not in sub.get("generated_ok", []): v.append(f"{rel}: subdirectories forbidden in {area}")
-            if area == ".claude/skills" and name not in sub.get("allowed_subdirs", []): v.append(f"{rel}: subdirectory not allowed in .claude/skills (allowed {sub.get('allowed_subdirs')})")
+            if sub.get("subdirs") == "forbidden" and name not in sub.get("generated_ok", []): v.append(f"{rel}: subdirectories forbidden in {a}")
+            if a == ".claude/skills" and name not in sub.get("allowed_subdirs", []): v.append(f"{rel}: subdirectory not allowed in .claude/skills (allowed {sub.get('allowed_subdirs')})")
             return v
         for g in sub.get("forbidden_globs", []):
-            if fnmatch.fnmatch(name, g): v.append(f"{rel}: '{g}' is forbidden in {area}")
+            if fnmatch.fnmatch(name, g): v.append(f"{rel}: {g} is forbidden in {a}")
         ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
         ae = sub.get("allowed_extensions", "*")
-        if ae != "*" and ext not in ae and len(parts) == 3: v.append(f"{rel}: extension .{ext} not allowed in {area}")
+        if ae != "*" and ext not in ae and len(parts) == 3: v.append(f"{rel}: extension .{ext} not allowed in {a}")
         rule = sub.get("naming_rule", "technical")
         if rule == "python_module" and name.endswith(".py"): v += [f"{rel}: {x}" for x in check_technical_name(name, pol, python=True)]
         elif rule == "business" and len(parts) == 3: v += [f"{rel}: {x}" for x in check_business_name(name, pol)]
         elif rule in ("technical", "python_module"):
             if name.endswith(".py"): v += [f"{rel}: {x}" for x in check_technical_name(name, pol, python=True)]
             else: v += [f"{rel}: {x}" for x in check_technical_name(name, pol)]
+        return v
+    return v
+
+def _check_business(rel, parts, name, is_dir, pol, area):
+    """Rules for ONE path inside the business tree. `parts` is relative to the business root, `area` is its repository-relative
+    directory key. Dispatch is by contract KIND: inbox · active-work/reference · sources · completed/archive."""
+    dc = pol["directories"].get(area, {}); kind = dc.get("kind", ""); sem = pol["semantics"]; v = []
+    short = area.split("/")[-1]
+    if kind == "inbox":
+        if is_dir: v.append(f"{rel}: subdirectories are forbidden in {short}")
+        return v
+    if kind in ("active-work", "reference", "sources"):
+        fixed = dc.get("fixed_subdirs", [])
+        if len(parts) == 2 and is_dir and name not in fixed: v.append(f"{rel}: only fixed subdomains allowed in {short}: {fixed}")
+        if len(parts) == 2 and not is_dir: v.append(f"{rel}: files must live inside a subdomain of {short} {fixed}")
+        if len(parts) >= 3 and parts[1] not in fixed: v.append(f"{rel}: unknown subdomain {parts[1]} (allowed {fixed})")
+        if kind == "sources":
+            if len(parts) == 3 and is_dir and not re.match(dc["source_naming"]["folder_regex"], name): v.append(f"{rel}: source folder must be Name-YYYY-MM-DD[-suffix]")
+            if not is_dir and not (_rx(pol, "technical_filename_regex").match(name) or not check_business_name(name, pol)): v.append(f"{rel}: source file name must be technical (no spaces/parentheses) or business form")
+            if not is_dir and (_matches_any(name, sem["code_markers"]["patterns"]) or _matches_any(name, sem["runtime_markers"]["patterns"])): v.append(f"{rel}: runtime code inside {short}")
+            return v
+        if len(parts) >= 3:
+            if is_dir: v.append(f"{rel}: arbitrary subdirectories are forbidden in {short}")
+            else:
+                v += [f"{rel}: {x}" for x in check_business_name(name, pol)]
+                ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+                if dc.get("allowed_extensions") != "*" and ext not in dc.get("allowed_extensions", []): v.append(f"{rel}: extension .{ext} not allowed in {short}")
+        return v
+    if kind in ("completed", "archive"):
+        # sealed historical packages keep their ORIGINAL names: an archive is evidence, and renaming it destroys provenance
+        if kind == "archive" and len(parts) >= 2 and parts[1] in dc.get("verbatim_subdirs", []): return v
+        if is_dir: v += [f"{rel}: {x}" for x in check_business_name(name, pol, is_dir=True)]
+        else:
+            ok_business = not check_business_name(name, pol)
+            ok_tech = kind == "archive" and not check_technical_name(name, pol) and not re.search(r"\s|[()]", name)
+            if not (ok_business or ok_tech): v += [f"{rel}: {x}" for x in check_business_name(name, pol)]
+            if kind == "completed":
+                ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+                if ext not in dc.get("allowed_extensions", []): v.append(f"{rel}: extension .{ext} not allowed in {short}")
         return v
     return v
 
@@ -208,7 +291,7 @@ def validate_tree(root=DEFAULT_ROOT, pol=None, policy_path=POLICY_PATH):
         for rf in dc.get("required_files", []):
             if not (base / rf).exists(): problems.append(f"missing required file {area}/{rf}")
     for cf, spec in pol["canonical_files"].items():
-        if not (root / cf).exists() and cf in rt["required_files"] + ["00_Inbox/Input.md"]: problems.append(f"missing canonical file {cf}")
+        if not (root / cf).exists() and (spec.get("single_canonical") or cf in rt["required_files"]): problems.append(f"missing canonical file {cf}")
     # walk
     for dirpath, dirnames, filenames in os.walk(root):
         dp = pathlib.Path(dirpath); rel_dir = _rel(root, dp) if dp != root else ""
@@ -223,11 +306,13 @@ def validate_tree(root=DEFAULT_ROOT, pol=None, policy_path=POLICY_PATH):
             rel = f"{rel_dir}/{f}" if rel_dir else f
             if _is_ignored(f, pol) and f != "desktop.ini": continue
             problems += check_path(dp / f, pol, root, is_dir=False)
-    # inbox invariant
-    inbox = root / "00_Inbox"
-    if inbox.is_dir():
-        extra = [e.name for e in inbox.iterdir() if e.name != "Input.md" and not _is_ignored(e.name, pol)]
-        if extra: problems.append(f"00_Inbox not in steady state: unclassified items {extra}")
+    # inbox invariant (the inbox is whichever area the contract declares, wherever the business root puts it)
+    for area in _areas_by_kind(pol, "inbox"):
+        inbox = root / area
+        if not inbox.is_dir(): continue
+        keep = {pathlib.Path(cf).name for cf, sp in pol["canonical_files"].items() if cf.startswith(area + "/")} or {"Input.md"}
+        extra = [e.name for e in inbox.iterdir() if e.name not in keep and not _is_ignored(e.name, pol)]
+        if extra: problems.append(f"{area} not in steady state: unclassified items {extra}")
     # single canonical artifacts
     for cf, spec in pol["canonical_files"].items():
         if not spec.get("single_canonical"): continue
@@ -242,9 +327,14 @@ def validate_tree(root=DEFAULT_ROOT, pol=None, policy_path=POLICY_PATH):
                 problems.append(f"duplicate canonical artifact for {cf}: {rel}")
     # reference vs completed: same base document in both
     anywhere = set(pol["reserved_technical_names"].get("anywhere_files", []))          # .gitkeep placeholders are not documents
-    ref = {p.name: p for p in (root / "02_Reference").rglob("*") if p.is_file() and p.name not in anywhere} if (root / "02_Reference").is_dir() else {}
-    comp = {p.name for p in (root / "03_Completed").rglob("*") if p.is_file() and p.name not in anywhere} if (root / "03_Completed").is_dir() else set()
-    for n in ref.keys() & comp: problems.append(f"{n}: exists in both 02_Reference and 03_Completed (one canonical location)")
+    def _names(areas):
+        out = {}
+        for a in areas:
+            base = root / a
+            if base.is_dir(): out.update({p.name: a for p in base.rglob("*") if p.is_file() and p.name not in anywhere})
+        return out
+    ref, comp = _names(_areas_by_kind(pol, "reference")), _names(_areas_by_kind(pol, "completed"))
+    for n in sorted(ref.keys() & comp.keys()): problems.append(f"{n}: exists in both {ref[n]} and {comp[n]} (one canonical location)")
     # markdown links
     for md in pol["links"]["check_markdown_links_in"]:
         p = root / md
@@ -263,6 +353,12 @@ def validate_tree(root=DEFAULT_ROOT, pol=None, policy_path=POLICY_PATH):
             if d not in txt: problems.append(f"README.md does not mention required directory {d}")
         for f in rt["required_files"]:
             if f not in txt: problems.append(f"README.md does not mention required file {f}")
+        br = (pol.get("business_root") or "").strip("/")
+        for sub in (pol["directories"].get(br, {}).get("fixed_subdirs", []) if br else []):
+            if sub not in txt: problems.append(f"README.md does not mention the business area {br}/{sub}")
+        for reg in (pol["directories"].get(br, {}).get("allowed_files", []) if br else []):
+            if reg not in txt: problems.append(f"README.md does not mention the live register {br}/{reg}")
+    problems += check_scope(root, pol)
     problems += check_identity(root, pol)
     problems += check_interaction(root, pol)
     problems += check_boundary(root)
@@ -280,6 +376,22 @@ def check_tree_manifest(root, pol):
         miss = tm.verify(root, tm.build(pol))
         problems += [f"required canonical path missing: {m} (documentation is not enough — it must exist)" for m in miss]
     except Exception as e: problems.append(f"tree manifest check failed: {type(e).__name__}: {e}")
+    return problems
+
+def check_scope(root, pol):
+    """HARD SCOPE LOCK — the rule is only real if the machinery exists: the scope engine, the tests, and the statement in
+    CLAUDE.md. Missing machinery is a violation, because a scope rule that rests on the agent remembering it is not a rule."""
+    sc = pol.get("scope_lock")
+    if sc is None: return []
+    root = pathlib.Path(root); problems = []
+    for m in sc.get("enforcement_files", []):
+        if not (root / m).exists(): problems.append(f"scope_lock names the enforcement file {m}, which does not exist")
+    for rel, needles in (sc.get("mirror_files") or {}).items():
+        f = root / rel
+        if not f.exists(): problems.append(f"{rel}: scope-lock mirror file missing"); continue
+        txt = f.read_text(encoding="utf-8", errors="replace")
+        for need in needles:
+            if need not in txt: problems.append(f"{rel}: must state the HARD SCOPE LOCK ({need!r})")
     return problems
 
 def check_boundary(root):

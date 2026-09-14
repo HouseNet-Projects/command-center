@@ -65,6 +65,13 @@ def _store():
     import store
     return store.get(STATE_DIR)
 
+def _scope():
+    """HARD SCOPE LOCK engine (.claude/policy/scope.py) — the rule lives in the policy, never duplicated here."""
+    import sys as _sys
+    _sys.path.insert(0, str(HERE.parent / "policy"))
+    import scope
+    return scope
+
 # ───────────────────────── registry ─────────────────────────
 def load_registry(path=REGISTRY_PATH):
     if not pathlib.Path(path).exists():
@@ -565,6 +572,8 @@ def open_ticket(reg, prompt, session_id="", source="UserPromptSubmit", inputs=No
               "gate": {"status": g["status"], "blocked": g["blocked"], "runnable": g["runnable"], "assisted": g["assisted"]},
               "governed": plan["status"] == "RESOLVED", "adversarial": cls["adversarial"], "executable": cls["executable"], "maintenance": cls["maintenance"],
               "executions": [], "declarations": [], "tool_events": [], "stop_blocks": 0, "closure": None}
+    try: ticket["scope"] = _inherited_scope(tid, prompt, session_id, source)
+    except Exception as e: ticket["scope"] = {"status": "UNAVAILABLE", "task_id": tid, "reason": f"{type(e).__name__}: {e}"}   # fail closed: nothing is in scope
     _store().upsert("tickets", tid, ticket, extra_cols={"session_id": session_id, "status": "OPEN"})
     audit({"execution_id": tid, "ticket_id": tid, "skill_id": "<ticket>", "result_status": "OPENED", "intent": scrub(prompt)[:300],
            "resolution": plan["status"], "chain": plan.get("chain", []), "gate_status": g["status"], "adversarial": cls["adversarial"],
@@ -636,6 +645,72 @@ def maintenance_grant(ticket_id):
     t["declarations"].append({"kind": "MAINTENANCE", "ts": _now()}); save_ticket(t)
     audit({"execution_id": ticket_id, "ticket_id": ticket_id, "skill_id": "<ticket>", "result_status": "MAINTENANCE_GRANTED"})
     return {"status": "GRANTED", "ticket_id": ticket_id}
+
+# ───────────────────────── HARD SCOPE LOCK (workspace_policy.json -> scope_lock) ─────────────────────────
+def _inherited_scope(tid, prompt, session_id, source):
+    """A TASK spans several messages, so the Scope Contract follows the task, not the message: a new ticket in the same
+    session inherits the contract Gev already confirmed. Inheritance carries NO new permission — the allowed subsystems were
+    authorised by Gev's own earlier words — and the EVIDENCE pool is the new message plus what is already allowed, so an
+    extension still needs Gev to say it again."""
+    sc = _scope()
+    c = sc.new_contract(tid, prompt, session_id=session_id, source=source)
+    if not session_id: return c
+    try: prev = _store().list("tickets", where="session_id=?", args=(session_id,), order="updated_at DESC, rowid DESC", limit=8)
+    except Exception: prev = []
+    for p in prev:
+        pc = (p or {}).get("scope") or {}
+        if pc.get("status") != "CONFIRMED": continue
+        c.update(status="CONFIRMED", requested_outcome=pc.get("requested_outcome"),
+                 allowed_subsystems=list(pc.get("allowed_subsystems") or []), allowed_paths=list(pc.get("allowed_paths") or []),
+                 allowed_operations=list(pc.get("allowed_operations") or []), out_of_scope=list(pc.get("out_of_scope") or []),
+                 extensions=list(pc.get("extensions") or []), inherited_from=p.get("ticket_id"))
+        c["evidence_subsystems"] = sorted(set(c["evidence_subsystems"]) | set(c["allowed_subsystems"]))
+        break
+    return c
+
+def ticket_scope(t):
+    """The Scope Contract of a ticket, or None. The ticket IS the task owner — no parallel task system."""
+    return (t or {}).get("scope")
+
+def set_scope(ticket_id, outcome, subsystems, operations=None, extend=False):
+    """Record the scope Deputy stated back to Gev. REFUSED for any subsystem Gev's own message does not support:
+    Deputy cannot give itself permission to touch what Gev did not ask for."""
+    sc = _scope()
+    t = get_ticket(ticket_id)
+    if not t: raise SkillError(f"ticket {ticket_id} not found")
+    cur = t.get("scope")
+    if not cur or cur.get("status") == "UNAVAILABLE":
+        cur = sc.new_contract(ticket_id, t.get("prompt_excerpt", ""), session_id=t.get("session_id", ""), source=t.get("source", ""))
+    if extend and not sc.is_confirmed(cur):
+        return {"status": "REFUSED", "code": "NO_CONTRACT", "reason": "nothing to extend: set the scope first"}
+    r = sc.confirm(cur, outcome, subsystems, operations=operations, extension=extend)
+    if r["status"] != "CONFIRMED":
+        audit({"execution_id": ticket_id, "ticket_id": ticket_id, "skill_id": "<scope>", "result_status": "SCOPE_REFUSED",
+               "code": r.get("code"), "reason": r.get("reason"), "requested": list(subsystems)})
+        return r
+    t["scope"] = r["contract"]; save_ticket(t)
+    audit({"execution_id": ticket_id, "ticket_id": ticket_id, "skill_id": "<scope>",
+           "result_status": "SCOPE_EXTENDED" if extend else "SCOPE_CONFIRMED",
+           "outcome": r["contract"]["requested_outcome"], "allowed": r["contract"]["allowed_subsystems"],
+           "operations": r["contract"]["allowed_operations"], "out_of_scope": r["contract"]["out_of_scope"]})
+    return {"status": "CONFIRMED", "ticket_id": ticket_id, "scope": r["contract"]}
+
+def scope_check(t, rels):
+    """[{path, reason}] for every path outside this ticket's contract. Default DENY when no contract is confirmed."""
+    try: return _scope().check_paths(rels, ticket_scope(t))
+    except Exception as e: return [{"path": str(r), "reason": f"scope engine unavailable ({type(e).__name__}: {e}) — fail closed"} for r in rels]
+
+def scope_allows_system(t, system_id):
+    """(ok, reason) for an EXTERNAL target system (INT-TASKS, INT-OL-MAIL, …) against the contract."""
+    try:
+        sc = _scope(); c = ticket_scope(t)
+        if not sc.is_confirmed(c): return True, "no confirmed contract — the approval law still governs this action"
+        owner = sc.systems_subsystem(system_id)
+        if owner is None: return True, f"{system_id} belongs to no declared subsystem"
+        if owner in (c.get("allowed_subsystems") or []): return True, f"{system_id} is in {owner}"
+        return False, f"{system_id} is in {owner} — outside this task's scope {c.get('allowed_subsystems')}"
+    except Exception as e:
+        return True, f"scope engine unavailable ({type(e).__name__}: {e})"
 
 def ticket_allows_execution(t):
     """True when the ticket carries a governed execution (any skill/plan run) or an explicit declaration."""
