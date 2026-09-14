@@ -118,7 +118,7 @@
   "test_business.B08_RealModel.test_real_queries"
  ],
  "failed_tests": [],
- "certified_at": "2026-09-14T15:56:33",
+ "certified_at": "2026-09-14T16:23:42",
  "fingerprint": "0e57b7e02bb054a8f5615d8b",
  "core_fingerprint": "c346f60bee1463d1",
  "result": "PASS",

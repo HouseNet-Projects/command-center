@@ -513,11 +513,45 @@ class C08_HumanReadableIdentity(unittest.TestCase):
     PRESENTATION rule only: a username or a display name never becomes confirmed identity, and it creates no identity binding."""
     def setUp(self): env(TG_ENV); fresh()
 
+    _uid = 0
     def _rec(self, frm):
-        tr = tg_transport({"getUpdates": (200, json.dumps({"ok": True, "result": [upd(1, 100, frm["id"], "բարև", extra={"from": frm})]}))})
+        # a fresh update_id per call: the shared offset/dedupe would correctly drop a replayed one
+        type(self)._uid += 1; uid = type(self)._uid
+        tr = tg_transport({"getUpdates": (200, json.dumps({"ok": True, "result": [upd(uid, 100, frm["id"], "բարև", extra={"from": frm})]}))})
         e = layer.query("INT-TG", "chat.messages", {"limit": 50}, use_cache=False, transport=tr)
         self.assertEqual(e["status"], "OK"); self.assertEqual(len(e["records"]), 1)
         return e["records"][0]
+
+    @covers(CI, "people_resolver", *GOV, kinds=("unit",))
+    def test_the_username_is_the_label_and_work_continues(self):
+        r = self._rec({"id": 7, "is_bot": False, "first_name": "Piloyan", "username": "piloyan07"})
+        who = CH._who(r, "INT-TG")
+        self.assertEqual(who["label"], "@piloyan07")
+        self.assertFalse(who["confirmation_required"])                       # nothing to ask Gev for ordinary reporting
+
+    @covers(CI, "people_resolver", *GOV, kinds=("unit",))
+    def test_without_a_username_the_provider_name_is_the_label(self):
+        r = self._rec({"id": 7, "is_bot": False, "first_name": "Piloyan", "last_name": "Sargsyan"})
+        who = CH._who(r, "INT-TG")
+        self.assertEqual(who["label"], "Piloyan Sargsyan"); self.assertFalse(who["confirmation_required"])
+        r2 = self._rec({"id": 7, "is_bot": False})
+        self.assertIn("7", CH._who(r2, "INT-TG")["label"])                   # last resort: the id, named as technical
+
+    @covers(CI, "people_resolver", *GOV, kinds=("unit", "authority"))
+    def test_only_an_operation_that_needs_identity_asks_for_confirmation(self):
+        self.assertFalse(PP.confirmation_required()); self.assertFalse(PP.confirmation_required("reporting"))
+        self.assertFalse(PP.confirmation_required("channel_intelligence"))
+        for op in PP.confirmation_operations(): self.assertTrue(PP.confirmation_required(op), op)
+        self.assertTrue(PP.confirmation_required("ownership"))               # case-insensitive
+        for need in ("OWNERSHIP", "AUTHORITY", "ROLE_BINDING"): self.assertIn(need, PP.confirmation_operations(), need)
+
+    @covers(CI, "people_resolver", *GOV, kinds=("adversarial", "failure"))
+    def test_an_unmapped_sender_is_never_a_blocker(self):
+        card = PP.describe_external("INT-TG", "999003", username="nobody")
+        self.assertIsNone(card["blocker"]); self.assertFalse(card["confirmation_required"])
+        self.assertEqual(card["label"], "@nobody")
+        self.assertIn(card["identity_status"], ("UNKNOWN", "NEEDS_CONFIRMATION"))
+        self.assertIn("բավական", card["note"])                              # says plainly that the label is enough
 
     @covers(CI, "people_resolver", *GOV, kinds=("unit",))
     def test_safe_metadata_survives_the_whole_chain(self):
@@ -551,7 +585,7 @@ class C08_HumanReadableIdentity(unittest.TestCase):
         card = PP.describe_external("INT-TG", "999001", username="ohanyan88", first_name="Ohanyan", display="Ohanyan")
         self.assertIn(card["identity_status"], ("UNKNOWN", "NEEDS_CONFIRMATION"))
         self.assertIsNone(card["confirmed_name"]); self.assertIsNone(card["person"])
-        self.assertIn("ինքնության ապացույց չէ", card["note"])
+        self.assertIn("ոչ հաստատված ինքնություն", card["note"])        # the label is explicitly NOT identity evidence
         r = self._rec({"id": 7, "is_bot": False, "first_name": "Ohanyan", "username": "ohanyan88"})
         self.assertNotEqual(CH._who(r, "INT-TG")["status"], "PERSON_KNOWN")
 

@@ -27,6 +27,7 @@ def _who(rec, iid):
     card = people.describe_chat_record(dict(rec, channel=iid))
     return {"status": ident["status"], "person": ident.get("person"), "name": ident.get("name") or rec.get("sender_name") or rec.get("sender_id"),
             "candidates": ident.get("candidates", []),
+            "label": card["label"], "confirmation_required": card["confirmation_required"],
             "username": card["username"], "first_name": card["first_name"], "last_name": card["last_name"],
             "display_name": card["display_name"], "human": card["human"], "reference_id": card["reference_id"],
             "missing_fields": card["missing_fields"], "provider_missing_note": card["provider_missing_note"]}

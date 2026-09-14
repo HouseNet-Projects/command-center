@@ -196,6 +196,28 @@ class W04_Interaction(unittest.TestCase):
         for d in ("skills", "hooks"): sys.path.insert(0, str(ROOT / ".claude" / d))
         import engine, gate; cls.engine, cls.gate = engine, gate
 
+    def test_a_human_label_is_enough_for_ordinary_work(self):
+        """A label is not a mapping: for ordinary read/intelligence/reporting the provider label is sufficient to keep working."""
+        hri = POLICY["interaction"]["human_readable_identity"]
+        self.assertIn("@username", hri["label_rule"]); self.assertIn("NOT a blocker", hri["never_block"])
+        ops = hri["confirmation_required_only_for"]
+        self.assertTrue(isinstance(ops, dict) and ops)
+        for need in ("OWNERSHIP", "AUTHORITY", "ROLE_BINDING"): self.assertIn(need, ops, need)
+        for k in ("label_rule", "never_block", "confirmation_required_only_for"):
+            p2 = copy.deepcopy(POLICY); del p2["interaction"]["human_readable_identity"][k]
+            self.assertTrue(any(k in x for x in vw.check_interaction(clean_tree(), p2)), k)
+
+    def test_the_no_blocker_guarantee_cannot_be_removed(self):
+        p2 = copy.deepcopy(POLICY); p2["interaction"]["human_readable_identity"]["never_block"] = "ask Gev whenever unsure"
+        self.assertTrue(any("never_block" in x for x in vw.check_interaction(clean_tree(), p2)))
+        p3 = copy.deepcopy(POLICY); p3["interaction"]["human_readable_identity"]["confirmation_required_only_for"] = {}
+        self.assertTrue(any("confirmation_required_only_for" in x for x in vw.check_interaction(clean_tree(), p3)))
+
+    def test_runtime_tells_the_agent_to_continue_rather_than_ask(self):
+        line = self.gate.interaction_line(self.engine)
+        self.assertIn("ՇԱՐՈՒՆԱԿԻՐ", line); self.assertIn("blocker չէ", line)
+        for op in ("OWNERSHIP", "AUTHORITY"): self.assertIn(op, line, op)
+
     def test_policy_is_the_single_interaction_source(self):
         ix = POLICY["interaction"]
         self.assertEqual(ix["user_language"], "hy-AM")

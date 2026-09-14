@@ -103,9 +103,10 @@ def resolve_external(channel, external_id, display=None):
 
 def describe_external(channel, external_id, *, username=None, first_name=None, last_name=None, display=None):
     """HUMAN-READABLE presentation of an external sender (workspace_policy.json -> interaction.human_readable_identity).
-    Deputy must never hand Gev a bare numeric id to decode: it resolves the best available safe context FIRST and asks only
-    if still ambiguous. This is presentation ONLY — a username or a name is never identity evidence, and binding stays
-    fail-closed in resolve_external()."""
+    Deputy never hands Gev a bare numeric id to decode: it builds a LABEL from the provider evidence and keeps working. A label is
+    enough for ordinary read/intelligence/reporting; a missing identity mapping is NOT a blocker and is never turned into a question
+    to Gev by itself. This is presentation ONLY — a username or a name is never identity evidence, and the binding itself stays
+    fail-closed in resolve_external(); confirmation is asked for only by confirmation_required()."""
     res = resolve_external(channel, external_id, display or first_name or username)
     parts, missing = [], []
     if username: parts.append("@" + str(username).lstrip("@"))
@@ -116,15 +117,35 @@ def describe_external(channel, external_id, *, username=None, first_name=None, l
     if display and display not in parts: parts.append(f"display name «{display}»")
     known = res.get("name") if res["status"] == "PERSON_KNOWN" else None
     if known: parts.insert(0, known)
+    label = (("@" + str(username).lstrip("@")) if username else (full or display or ("id " + str(external_id))))
     return {"channel": channel, "external_id": str(external_id), "identity_status": res["status"], "person": res.get("person"),
+            "label": known or label, "confirmation_required": False, "blocker": None,
             "confirmed_name": known, "username": (str(username).lstrip("@") if username else None),
             "first_name": first_name, "last_name": last_name, "display_name": display,
             "missing_fields": missing, "candidates": res.get("candidates", []),
             "human": " · ".join(parts) if parts else f"(մատակարարը մարդկային ոչ մի դաշտ չի տվել, միայն տեխնիկական id {external_id})",
             "reference_id": str(external_id),
             "note": ("հաստատված ինքնություն" if known else
-                     "ցուցադրվող անունը ինքնության ապացույց չէ — հաստատումը Գև-ինն է"),
+                     "մարդկային պիտակ է, ոչ հաստատված ինքնություն — սովորական աշխատանքի համար բավական է, հաստատում պետք է միայն "
+                     "role/ownership/authority/reconciliation/ambiguity գործողությունների դեպքում"),
             "provider_missing_note": ("մատակարարը չի տվել՝ " + ", ".join(missing)) if missing else None}
+
+CONFIRMATION_OPERATIONS = ("ROLE_BINDING", "OWNERSHIP", "AUTHORITY", "CROSS_SYSTEM_RECONCILIATION", "AMBIGUOUS_NAME")
+
+def confirmation_operations():
+    """Operations that genuinely depend on a CONFIRMED identity - read from the canonical policy, with a fail-closed fallback."""
+    try:
+        import json as _json, pathlib as _pl
+        pol = _json.loads((_pl.Path(__file__).resolve().parent.parent / "policy" / "workspace_policy.json").read_text(encoding="utf-8"))
+        ops = pol["interaction"]["human_readable_identity"]["confirmation_required_only_for"]
+        if isinstance(ops, dict) and ops: return tuple(sorted(ops))
+    except Exception: pass
+    return CONFIRMATION_OPERATIONS
+
+def confirmation_required(operation=None):
+    """True only when the OPERATION itself needs a confirmed identity. Presenting, reading, summarising or reporting never does,
+    so an unmapped sender is labelled and the work continues instead of stopping on a question to Gev."""
+    return str(operation or "").strip().upper() in confirmation_operations()
 
 def describe_chat_record(rec):
     """Same presentation, taken straight from a normalized chat record."""
