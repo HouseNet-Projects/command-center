@@ -838,15 +838,19 @@ def ev_i_send_routes_to_approval():
 def ev_i_no_credentials():
     fails = []
     keep = {k: _os.environ.pop(k) for k in list(_os.environ) if k.startswith("CC_INT_TG_") or k.startswith("CC_INT_WA_")}
+    home = _os.environ.get("COMMAND_CENTER_HOME")
+    _os.environ["COMMAND_CENTER_HOME"] = str(TMP / "no-credentials-home")      # a real ~/.command-center config must never decide this eval
     try:
-        plan, r = _i("Տելեգրամում ինչ կա"); res = _ires(r, "channel_intelligence"); tg = res.get("channels", {}).get("INT-TG", {})
+        plan, r = _i("Տելեգրամում ինչ կա", {"no_cache": True}); res = _ires(r, "channel_intelligence"); tg = res.get("channels", {}).get("INT-TG", {})
         if tg.get("state") != "NOT_CONFIGURED" or "bot_token" not in tg.get("missing", []): fails.append(f"activation gap not honest: {tg}")
         if "not configured" not in res.get("verdict", "") or "nothing new" in res.get("verdict", "").lower(): fails.append(f"verdict {res.get('verdict')}")
         for k in ("bot_token", "access_token"):
             if k.upper() + "=" in json.dumps(res): fails.append("a value was printed")
         import readiness as _RD; txt = _RD.render()
         if "INT-TG" not in txt or "missing: BOT_TOKEN" not in txt or "INT-WA" not in txt: fails.append("readiness view incomplete")
-    finally: _os.environ.update(keep)
+    finally:
+        _os.environ.update(keep)
+        _os.environ.pop("COMMAND_CENTER_HOME", None) if home is None else _os.environ.update({"COMMAND_CENTER_HOME": home})
     return fails, [f"tg={tg.get('state')} missing={tg.get('missing')}"], plan, r
 def ev_i_mikrobill_deferred():
     fails = []; plan, r = _i("ինչ խնդիր ունենք վաճառքում"); res = _ires(r, "management_snapshot"); s = res.get("sales") or {}; vis = res.get("visibility", {}).get("INT-MB", {})

@@ -242,5 +242,41 @@ class H05_ChainFailureInjection(unittest.TestCase):
             r = engine.run_skill(REG, "daily_briefing", {"today": T}); self.assertEqual(r["status"], "VERIFICATION_FAILED"); self.assertFalse(r["verification"]["ok"])
         finally: executors.daily_briefing = orig
 
+class H07_CredentialRedaction(unittest.TestCase):
+    """REGRESSION (INT-TG activation, 2026-09-14): a secret does not only arrive under a sensitive KEY NAME — it is pasted into a
+    prompt, an intent or a command line as an ordinary string. Such a value reached the audit `intent` and the ticket
+    `prompt_excerpt` verbatim, and the audit table feeds the VERSIONED durable export — i.e. a path to Git. Every credential
+    below is synthetic and never real."""
+    # Every fixture is ASSEMBLED AT RUNTIME from harmless fragments: a credential-shaped literal must never exist in a versioned
+    # file, because the boundary scanner rightly refuses one and cannot tell a synthetic fixture from a live key.
+    FAKE = "1234567890" + ":" + "AA" + "FakeSyntheticNeverRealTokenForTests00"
+    SHAPES = (FAKE, "EA" + "A" + "FakeSyntheticMetaAccessTokenValue0000", "gh" + "p_" + "FakeSyntheticGithubTokenValue00000",
+              "xo" + "xb-" + "000000000-fake-synthetic-value", "AK" + "IA" + "FAKESYNTHETIC000", "sk" + "-" + "FakeSyntheticOpenAiKeyValue000")
+
+    @covers("data_sensitivity_awareness", "audit_logging", kinds=("adversarial",))
+    def test_credential_shaped_values_are_scrubbed_and_ordinary_text_survives(self):
+        for cred in self.SHAPES:
+            out = engine.scrub(f"install this: {cred} now")
+            self.assertNotIn(cred, out, cred); self.assertIn("<secret>", out, cred)
+        code = "abcdef" + "1234567890abcd"                                  # assembled, never a literal webhook code
+        self.assertNotIn(code, engine.scrub("https://housenet.bitrix24.ru/re" + "st/1/" + code + "/"))
+        for ordinary in ("task 7 is overdue, meeting at 10:30", "ԿՐԻՏԻԿԱԿԱՆ — 2% monthly decline", "ratio 3:1 and id 42"):
+            self.assertEqual(engine.scrub(ordinary), ordinary, ordinary)      # never over-redacts ordinary management text
+
+    @covers("data_sensitivity_awareness", "audit_logging", kinds=("adversarial", "failure_injection"))
+    def test_pasted_credential_never_reaches_ticket_excerpt_audit_row_or_mirror(self):
+        prompt = f"here is the bot token {self.FAKE} — install it"
+        t = engine.open_ticket(REG, prompt, session_id="hard-cred")
+        self.assertNotIn(self.FAKE, json.dumps(t, ensure_ascii=False))                      # ticket excerpt scrubbed…
+        self.assertIn("<secret>", t["prompt_excerpt"]); self.assertTrue(t["prompt_sha"])    # …while the audit trail is preserved
+        stored = engine._store().get("tickets", t["ticket_id"])
+        self.assertNotIn(self.FAKE, json.dumps(stored, ensure_ascii=False))
+        rows = engine._store().list("audit", where="execution_id=?", args=(t["ticket_id"],))
+        self.assertTrue(rows); self.assertNotIn(self.FAKE, json.dumps(rows, ensure_ascii=False))
+        engine.audit({"execution_id": "cred-test", "skill_id": "<test>", "result_status": "OK", "intent": prompt, "cmd": f"curl -H 'bearer {self.FAKE}'"})
+        self.assertNotIn(self.FAKE, json.dumps(engine._store().list("audit", where="execution_id=?", args=("cred-test",)), ensure_ascii=False))
+        self.assertEqual(engine._redact({"nested": [{"intent": prompt}]})["nested"][0]["intent"].count(self.FAKE), 0)
+        self.assertEqual(engine._redact({"bot_token": self.FAKE})["bot_token"], "<redacted>")   # key-name redaction still applies
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

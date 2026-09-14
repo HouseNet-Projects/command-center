@@ -1,4 +1,4 @@
-# Registry Quality Audit — 2026-09-12
+# Registry Quality Audit — 2026-09-14
 
 **Before:** 132 skills · **After:** 72 skills · **Retired/merged:** 71
 

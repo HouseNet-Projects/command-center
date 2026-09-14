@@ -34,6 +34,25 @@ REQUIRED_FIELDS = ["skill_id","name","version","domain","purpose","business_outc
   "last_verified"]
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 SENSITIVE = re.compile(r"(password|passwd|token|secret|api[_-]?key|գաղտնաբառ)", re.I)
+# CREDENTIAL VALUES — a secret does not only arrive under a sensitive KEY NAME: it is pasted into a prompt, an intent or a
+# command line as an ordinary string. Those shapes are scrubbed everywhere Deputy persists text (audit rows, audit mirror,
+# ticket excerpts) so a credential can never reach the durable export or Git. Shapes only — no secret is stored here.
+CREDENTIAL_VALUE_RX = [
+    re.compile(r"\b\d{6,}:[A-Za-z0-9_-]{30,}\b"),                  # Telegram bot token
+    re.compile(r"\bEAA[A-Za-z0-9]{20,}\b"),                        # Meta / WhatsApp Cloud API access token
+    re.compile(r"\b(?:sk|rk)-[A-Za-z0-9_-]{16,}\b"),               # OpenAI-style API key
+    re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),                 # GitHub token
+    re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"),               # Slack token
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),                           # AWS access key id
+    re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._-]{20,}"),             # bearer header pasted into text
+]
+BITRIX_CODE_RX = re.compile(r"(/rest/\d+/)[A-Za-z0-9]{8,}(/?)")    # Bitrix24 inbound webhook code inside a URL
+
+def scrub(text):
+    """Replace credential-shaped VALUES inside free text with a marker (key-name redaction stays in SENSITIVE)."""
+    t = str(text)
+    for rx in CREDENTIAL_VALUE_RX: t = rx.sub("<secret>", t)
+    return BITRIX_CODE_RX.sub(r"\1<secret>\2", t)
 CERT_FIELDS_EXCLUDED = {"evidence", "certification", "last_verified", "maturity_level"}
 
 class SkillError(Exception): pass
@@ -354,7 +373,9 @@ def gate(reg, plan, inputs=None, action_level="ANALYZE", approval_token=None, al
 def _redact(obj):
     if isinstance(obj, dict): return {k: ("<redacted>" if SENSITIVE.search(k) else _redact(v)) for k, v in obj.items()}
     if isinstance(obj, list): return [_redact(v) for v in obj]
-    if isinstance(obj, str) and len(obj) > 400: return obj[:400] + "…"
+    if isinstance(obj, str):
+        t = scrub(obj)                                   # credential-shaped values are scrubbed before anything is persisted
+        return t[:400] + "…" if len(t) > 400 else t
     return obj
 
 _IDENTITY = None
@@ -526,14 +547,14 @@ def open_ticket(reg, prompt, session_id="", source="UserPromptSubmit", inputs=No
     cls = classify_prompt(prompt)
     tid = uuid.uuid4().hex[:10]
     ticket = {"ticket_id": tid, "session_id": session_id, "source": source, "created": _now(), "status": "OPEN", "agent": identity()["name"],
-              "prompt_excerpt": prompt[:300], "prompt_sha": hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16],
+              "prompt_excerpt": scrub(prompt)[:300], "prompt_sha": hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16],
               "resolution": {"status": plan["status"], "primary": plan.get("primary"), "chain": plan.get("chain", []), "chain_name": plan.get("chain_name"), "domain": plan.get("domain", "BUSINESS"), "system_terms": plan.get("system_terms", []),
                              "required_inputs": plan.get("required_inputs", []), "tool_requirements": plan.get("tool_requirements", []), "reasons": plan.get("reasons", [])},
               "gate": {"status": g["status"], "blocked": g["blocked"], "runnable": g["runnable"], "assisted": g["assisted"]},
               "governed": plan["status"] == "RESOLVED", "adversarial": cls["adversarial"], "executable": cls["executable"], "maintenance": cls["maintenance"],
               "executions": [], "declarations": [], "tool_events": [], "stop_blocks": 0, "closure": None}
     _store().upsert("tickets", tid, ticket, extra_cols={"session_id": session_id, "status": "OPEN"})
-    audit({"execution_id": tid, "ticket_id": tid, "skill_id": "<ticket>", "result_status": "OPENED", "intent": prompt[:300],
+    audit({"execution_id": tid, "ticket_id": tid, "skill_id": "<ticket>", "result_status": "OPENED", "intent": scrub(prompt)[:300],
            "resolution": plan["status"], "chain": plan.get("chain", []), "gate_status": g["status"], "adversarial": cls["adversarial"],
            "executable": cls["executable"], "maintenance": cls["maintenance"], "source": source})
     return ticket
