@@ -8,7 +8,7 @@
 Idempotent and non-destructive: safe to run again at any time. Never overwrites a durable file, never resets state or ids,
 never replaces credentials (existing files are kept unless --force-secrets), never prints or logs the recovery key.
 
-Steps: 1 workspace root · 2 prerequisites (Python ≥3.11, git, gpg) · 3 canonical directories · 4 .venv · 5 pinned dependencies ·
+Steps: 1 workspace root · 2 prerequisites (Python ≥3.11, git, Git LFS, gpg) · 3 canonical directories · 4 .venv · 5 pinned dependencies ·
 6 encrypted credentials (if the recovery key is present) · 7 durable Deputy state import · 8 boundary hooks · 9 Business Model rebuild
 (sources → extract → build → validate → certify) · 10 workspace + tree-manifest validation · 11 durable checksums ·
 12 business certification · 13 integration certification (machine dependencies reported honestly) · 14 skill validation
@@ -52,7 +52,23 @@ def stage1(argv, rep):
     if sys.version_info < MIN_PY: pre.append(f"python {platform.python_version()} < {MIN_PY[0]}.{MIN_PY[1]}")
     if not shutil.which("git"): pre.append("git not on PATH")
     gpg = shutil.which("gpg") or shutil.which("gpg2")
-    rep.step(2, "prerequisites", "FAIL" if pre else ("OK" if gpg else "WARN"), ("; ".join(pre)) if pre else (f"python {platform.python_version()}, git, gpg={'yes' if gpg else 'NO (encrypted credentials cannot be restored)'}"))
+    # Git LFS carries the binary business workspace (Office, PDF, archives). Without it a clone holds pointer files, not documents.
+    lfs = shutil.which("git-lfs") or shutil.which("git-lfs.exe")
+    ga = ROOT / ".gitattributes"
+    lfs_required = ga.exists() and "filter=lfs" in ga.read_text(encoding="utf-8", errors="replace")
+    if lfs_required and not lfs:
+        pre.append("git-lfs not on PATH - this repository stores its Office/PDF/archive business files in Git LFS. "
+                   "Install Git LFS from https://git-lfs.com, then run: git lfs install && git lfs pull")
+    elif lfs_required:
+        ptr = []
+        for area in ("01_Active", "02_Reference", "03_Completed", "04_Sources", "05_Archive"):
+            for f in (ROOT / area).rglob("*"):
+                if f.is_file() and f.suffix.lower() in (".docx", ".xlsx", ".xlsm", ".pptx", ".pdf", ".zip", ".7z", ".bundle"):
+                    try:
+                        if f.stat().st_size < 400 and f.read_bytes()[:24].startswith(b"version https://git-lfs"): ptr.append(str(f.relative_to(ROOT)))
+                    except OSError: pass
+        if ptr: pre.append("Git LFS objects are not downloaded (%d pointer file(s), e.g. %s) - run: git lfs pull" % (len(ptr), ptr[0]))
+    rep.step(2, "prerequisites", "FAIL" if pre else ("OK" if gpg else "WARN"), ("; ".join(pre)) if pre else (f"python {platform.python_version()}, git, git-lfs={'yes' if lfs else 'not required'}, gpg={'yes' if gpg else 'NO (encrypted credentials cannot be restored)'}"))
     if pre: return False
     # 3 canonical directories (from the policy-derived manifest; stdlib read of the versioned manifest)
     man = json.loads((ROOT / ".claude" / "policy" / "workspace_tree_manifest.json").read_text(encoding="utf-8"))

@@ -23,8 +23,8 @@ DURABLE_DIRS = ("00_Inbox", "01_Active", "02_Reference", "03_Completed", "04_Sou
                 ".claude/runtime", ".claude/skills", ".claude/tools", ".claude/tests", ".claude/integrations", ".claude/state/durable", ".secure")
 DURABLE_ROOT_FILES = ("CLAUDE.md", "README.md", "Tasks.xlsx", "Journal.md", "Actions.md", "bootstrap.py", ".gitignore", ".gitattributes")
 REGENERATED_GLOBS = (".claude/business/*.json", ".claude/business/Business-model.md", ".claude/integrations/certification.json", "**/__pycache__/**", ".venv/**")
-EPHEMERAL_GLOBS = (".claude/state/*", ".claude/audit/**", "*.lock", "*.tmp", "~$*", "desktop.ini", "_TEMP_WORK_COLLECTION/**", ".claude/settings.local.json")
-SKIP_WALK = {".git", ".venv", "__pycache__", "_TEMP_WORK_COLLECTION"}
+EPHEMERAL_GLOBS = (".claude/state/*", ".claude/audit/**", "*.lock", "*.tmp", "~$*", "desktop.ini", ".claude/settings.local.json")
+SKIP_WALK = {".git", ".venv", "__pycache__"}
 # Versioned but rewritten by every release/bootstrap (timestamps, appended history): restored by clone, then legitimately regenerated —
 # excluded from content checksums and parity (their EXISTENCE is still required by the manifest where listed).
 RELEASE_CHURN = ("**/.claude/skills/certifications/*.json", ".claude/skills/certifications/*.json", ".claude/skills/registry.json", ".claude/docs/Registry-audit-*.md",
@@ -96,7 +96,6 @@ def build(pol=None):
     add(".claude/state/skill_state.db", "file", False, "EPHEMERAL", "recreated by the hardened store; durable rows imported from .claude/state/durable", "CONFIDENTIAL")
     add(".claude/audit/skill_audit.jsonl", "file", False, "EPHEMERAL", "best-effort mirror; the versioned form is .claude/state/durable/audit.jsonl", "CONFIDENTIAL")
     add(".claude/settings.local.json", "file", False, "MACHINE_LOCAL", "per machine", "RESTRICTED")
-    add("_TEMP_WORK_COLLECTION", "directory", False, "EPHEMERAL", "staging only — pending Gev's review; never versioned", "CONFIDENTIAL")
     seen = set(); uniq = []
     for e in entries:
         if e["path"] in seen: continue

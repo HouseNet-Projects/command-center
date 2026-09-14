@@ -39,6 +39,3 @@ Thumbs.db
 *.bak
 *.orig
 *.swp
-
-# ── temporary staging of collected work material — pending Gev's review, then integrated or dropped ──
-_TEMP_WORK_COLLECTION/

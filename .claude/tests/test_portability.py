@@ -28,6 +28,15 @@ def _clean_clone():
     shutil.copy(key, home / "recovery.key")
     r = _git(["clone", "-q", str(ROOT), str(d)], TMP)
     if r.returncode != 0: raise unittest.SkipTest(f"clone failed: {r.stderr[:200]}")
+    # Git LFS: a fresh clone holds pointers, not documents. Bring the objects over and check them out - the offline equivalent
+    # of `git lfs pull` on a new machine. Without this the restored workspace would contain pointer files instead of Office/PDF.
+    src_lfs = ROOT / ".git" / "lfs" / "objects"
+    if src_lfs.exists():
+        dst_lfs = d / ".git" / "lfs" / "objects"
+        if dst_lfs.exists(): shutil.rmtree(dst_lfs)
+        shutil.copytree(src_lfs, dst_lfs)
+        co = _git(["lfs", "checkout"], d)
+        if co.returncode != 0: raise unittest.SkipTest("git lfs checkout failed: " + (co.stderr or co.stdout)[:200])
     env = {**os.environ, "COMMAND_CENTER_HOME": str(home), "COMMAND_CENTER_VENV": str(ROOT / ".venv"), "COMMAND_CENTER_INTEGRATIONS_FIXTURE": ""}
     env.pop("COMMAND_CENTER_INTEGRATIONS_FIXTURE", None); env.pop("SKILL_STATE_DIR", None); env.pop("COMMAND_CENTER_RECOVERY_KEY_FILE", None); env.pop("COMMAND_CENTER_BUSINESS_DIR", None); env.pop("COMMAND_CENTER_BUSINESS_ROOT", None)
     runs = []
@@ -63,12 +72,12 @@ class P02_EmptyDirectoriesAndGitignore(unittest.TestCase):
     @covers(*GOV, "data_sensitivity_awareness", kinds=("unit",))
     def test_gitignore_matches_the_durability_model(self):
         gi = (ROOT / ".gitignore").read_text(encoding="utf-8")
-        for must in (".venv/", "__pycache__", ".claude/state/*", "!.claude/state/durable/", ".claude/audit/", ".claude/business/*.json", "*.key", ".env", ".secure/*.plain*", "*.lock", "_TEMP_WORK_COLLECTION/"): self.assertIn(must, gi, must)
+        for must in (".venv/", "__pycache__", ".claude/state/*", "!.claude/state/durable/", ".claude/audit/", ".claude/business/*.json", "*.key", ".env", ".secure/*.plain*", "*.lock"): self.assertIn(must, gi, must)
         for never in ("Tasks.xlsx", "Journal.md", "Actions.md", "01_Active/", "04_Sources/", ".claude/business/overlay/"):
             self.assertFalse(any(l.strip() == never for l in gi.splitlines()), f".gitignore must not ignore durable {never}")
         chk = lambda rel: _git(["check-ignore", "-q", rel], ROOT).returncode == 0
         for rel in ("Tasks.xlsx", "Journal.md", "01_Active/Sales/x.docx", ".claude/business/overlay/ov_people.py", ".claude/state/durable/commitments.jsonl", ".secure/credentials.gpg", ".secure/manifest.json"): self.assertFalse(chk(rel), rel)
-        for rel in (".venv/x", ".claude/state/skill_state.db", ".claude/state/journal.jsonl", ".claude/audit/skill_audit.jsonl", ".claude/business/business_model.json", ".secure/credentials.plain", "any/recovery.key", ".claude/settings.local.json", "_TEMP_WORK_COLLECTION/x"): self.assertTrue(chk(rel), rel)
+        for rel in (".venv/x", ".claude/state/skill_state.db", ".claude/state/journal.jsonl", ".claude/audit/skill_audit.jsonl", ".claude/business/business_model.json", ".secure/credentials.plain", "any/recovery.key", ".claude/settings.local.json"): self.assertTrue(chk(rel), rel)
     @covers("data_sensitivity_awareness", *GOV, kinds=("unit", "adversarial"))
     def test_no_plaintext_credential_in_git_history(self):
         pol = ss.load_policy(); bad = []
@@ -211,7 +220,12 @@ class P06_CleanCloneBootstrap(unittest.TestCase):
         (core fingerprint) matches even though the register is STRUCTURE-scoped live data — never a stale extracted snapshot."""
         c = _clean_clone(); d = c["dir"]
         committed = subprocess.run(["git", "show", "HEAD:Tasks.xlsx"], cwd=str(ROOT), capture_output=True).stdout
-        self.assertEqual(hashlib.sha256((d / "Tasks.xlsx").read_bytes()).hexdigest(), hashlib.sha256(committed).hexdigest())
+        head = committed[:300].decode("utf-8", "replace")
+        if head.startswith("version https://git-lfs"):
+            oid = [l.split("sha256:")[1].strip() for l in head.splitlines() if l.startswith("oid sha256:")][0]
+        else:
+            oid = hashlib.sha256(committed).hexdigest()
+        self.assertEqual(hashlib.sha256((d / "Tasks.xlsx").read_bytes()).hexdigest(), oid)   # real bytes restored, not a pointer
         src = json.loads((d / ".claude" / "business" / "sources.json").read_text(encoding="utf-8")); s9 = src["source_snapshot"]["S09"]
         self.assertEqual(s9["scope"], "STRUCTURE"); self.assertEqual(s9["live_integration"], "INT-TASKS"); self.assertIsNone(s9["size"])
     @covers(*GOV, kinds=("adversarial", "unit"))
@@ -221,6 +235,82 @@ class P06_CleanCloneBootstrap(unittest.TestCase):
         self.assertFalse((d / "_TEMP_WORK_COLLECTION").exists()); self.assertFalse((d / ".claude" / "audit" / "skill_audit.jsonl").exists() and (d / ".claude" / "audit" / "skill_audit.jsonl").stat().st_size > 5_000_000)
         out = "\n".join(r["out"] for r in c["runs"]); self.assertNotIn((home / "recovery.key").read_text(encoding="utf-8").strip(), out)
         self.assertNotIn(str(ROOT), (d / ".claude" / "state" / "bootstrap_last.json").read_text(encoding="utf-8").replace(str(d), ""))
+
+BIZ_EXT = (".docx", ".xlsx", ".xlsm", ".pptx", ".pdf", ".zip", ".7z", ".bundle", ".png", ".jpg", ".jpeg", ".html", ".svg", ".csv", ".md", ".txt", ".json", ".ics", ".yaml", ".patch", ".sha256", ".py", ".bat")
+LFS_EXT = (".docx", ".xlsx", ".xlsm", ".pptx", ".pdf", ".zip", ".7z", ".bundle")
+AREAS = ("00_Inbox", "01_Active", "02_Reference", "03_Completed", "04_Sources", "05_Archive")
+GITHUB_BLOB_LIMIT = 100 * 1024 * 1024
+
+class P07_PortableBinaryWorkspace(unittest.TestCase):
+    """GitHub + the recovery key must be the WHOLE workspace: every valuable business artifact is versioned, the binary ones
+    through Git LFS, and nothing of value is left behind on one machine."""
+    @classmethod
+    def setUpClass(cls):
+        cls.tracked = set(_git(["ls-files"], ROOT).stdout.splitlines())
+
+    @covers(*GOV, kinds=("completion", "unit"))
+    def test_every_business_file_in_the_taxonomy_is_versioned(self):
+        """No valuable file may sit untracked or ignored inside the user-facing workspace."""
+        missing = []
+        for area in AREAS:
+            for f in (ROOT / area).rglob("*"):
+                if f.is_file() and f.suffix.lower() in BIZ_EXT:
+                    rel = f.relative_to(ROOT).as_posix()
+                    if rel not in self.tracked: missing.append(rel)
+        self.assertEqual(missing, [], "business files outside Git: %s" % missing[:8])
+        ignored = [l for l in _git(["ls-files", "--others", "--ignored", "--exclude-standard"], ROOT).stdout.splitlines()
+                   if l.split("/")[0] in AREAS and pathlib.PurePosixPath(l).suffix.lower() in BIZ_EXT]
+        self.assertEqual(ignored, [], "ignored business files: %s" % ignored[:8])
+
+    @covers(*GOV, kinds=("unit", "completion"))
+    def test_binary_business_artifacts_are_carried_by_git_lfs(self):
+        """The Office/PDF/archive contract is declared in .gitattributes and actually applies to every such tracked path."""
+        ga = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        for ext in LFS_EXT:
+            self.assertIn("*%s filter=lfs" % ext, ga, ext)
+        paths = [t for t in self.tracked if pathlib.PurePosixPath(t).suffix.lower() in LFS_EXT]
+        self.assertTrue(paths, "no binary business artifact is tracked at all")
+        not_lfs = []
+        for chunk in [paths[i:i + 100] for i in range(0, len(paths), 100)]:
+            out = _git(["check-attr", "filter", "--"] + chunk, ROOT).stdout.splitlines()
+            not_lfs += [l for l in out if not l.endswith(": filter: lfs")]
+        self.assertEqual(not_lfs, [], "tracked binary artifacts outside LFS: %s" % not_lfs[:5])
+
+    @covers(*GOV, kinds=("failure", "adversarial"))
+    def test_no_plain_git_blob_exceeds_the_github_limit(self):
+        """GitHub refuses a regular blob over 100 MiB: anything that large must be an LFS pointer, or the repo cannot be pushed."""
+        oversized = []
+        for t in self.tracked:
+            f = ROOT / t
+            if not f.is_file(): continue
+            if f.stat().st_size <= GITHUB_BLOB_LIMIT: continue
+            r = _git(["check-attr", "filter", "--", t], ROOT).stdout.strip()
+            if not r.endswith(": filter: lfs"): oversized.append(t)
+        self.assertEqual(oversized, [], "over 100 MiB and not in LFS: %s" % oversized)
+
+    @covers(*GOV, kinds=("unit",))
+    def test_the_staging_subtree_is_gone_from_the_contract(self):
+        self.assertFalse((ROOT / "_TEMP_WORK_COLLECTION").exists())
+        self.assertNotIn("_TEMP_WORK_COLLECTION", (ROOT / ".claude/policy/workspace_policy.json").read_text(encoding="utf-8"))
+        self.assertNotIn("_TEMP_WORK_COLLECTION", (ROOT / ".gitignore").read_text(encoding="utf-8"))
+        self.assertNotIn("_TEMP_WORK_COLLECTION", (ROOT / ".claude/policy/tree_manifest.py").read_text(encoding="utf-8"))
+
+    @covers(*GOV, kinds=("completion", "unit"))
+    def test_the_migration_manifest_accounts_for_every_file(self):
+        """Nothing was moved or dropped without a record: destinations exist and are versioned, drops name the surviving twin."""
+        mf = ROOT / "05_Archive/Migration-2026-09-14/Migration-manifest-2026-09-14.json"
+        self.assertTrue(mf.exists())
+        recs = json.loads(mf.read_text(encoding="utf-8"))
+        self.assertGreater(len(recs), 100)
+        for r in recs:
+            self.assertTrue(r.get("old") and r.get("sha") and r.get("why"), r)
+            if r["new"]:
+                self.assertTrue((ROOT / r["new"]).exists(), "manifest destination missing: " + r["new"])
+                self.assertIn(r["new"], self.tracked, "manifest destination not versioned: " + r["new"])
+            else:
+                self.assertIn("byte-identical to", r["why"], r)
+                twin = r["why"].split("byte-identical to")[-1].replace("the tracked", "").strip()
+                self.assertTrue((ROOT / twin).exists(), "surviving twin missing: " + twin)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
