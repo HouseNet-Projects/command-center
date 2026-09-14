@@ -25,12 +25,15 @@ WA_ENV = {"CC_INT_WA_ACCESS_TOKEN": WATOKEN, "CC_INT_WA_PHONE_NUMBER_ID": "11122
 ALL_KEYS = list(TG_ENV) + list(WA_ENV) + ["CC_INT_TG_MODE", "CC_INT_TG_WEBHOOK_SECRET", "CC_INT_TG_OBSERVE_UNKNOWN", "CC_INT_WA_OBSERVE_UNKNOWN"]
 SECRET_VALUES = (TOKEN, WATOKEN, APPSECRET, VERIFY)
 _tr_orig = {"tg": TG.default_transport, "wa": WA.default_transport}
+_ORIG_WRITE_CERTS = CAP.WRITE_CERTS          # tests never read or write the REAL durable write certifications
 
 def setUpModule():
     engine.STATE_DIR = TMP / "state-iso"; (TMP / "state-iso").mkdir(parents=True, exist_ok=True); store.reset()
+    CAP.WRITE_CERTS = TMP / "write_certifications.json"
     os.environ["COMMAND_CENTER_TASKS_XLSX"] = str(GUARD); os.environ["COMMAND_CENTER_HOME"] = str(TMP / "home")
     os.environ.pop("COMMAND_CENTER_INTEGRATIONS_FIXTURE", None); layer._FIXTURE.update(path=None, mtime=None, data=None)
 def tearDownModule():
+    CAP.WRITE_CERTS = _ORIG_WRITE_CERTS
     fresh()                                                                         # leave a clean state dir for suites that run after this one in the same process
     for k in ALL_KEYS: os.environ.pop(k, None)
     os.environ.pop("COMMAND_CENTER_HOME", None); TG.default_transport = _tr_orig["tg"]; WA.default_transport = _tr_orig["wa"]
@@ -116,7 +119,9 @@ class C01_TelegramRead(unittest.TestCase):
 
 # ═══════════════════════ C02 Telegram outbound through the Action Runtime ═══════════════════════
 class C02_TelegramWrite(unittest.TestCase):
-    def setUp(self): env(TG_ENV); fresh(); health.record("INT-TG", True, op="identity"); TG.default_transport = tg_transport()
+    def setUp(self):
+        env(TG_ENV); fresh(); health.record("INT-TG", True, op="identity"); TG.default_transport = tg_transport()
+        CAP.WRITE_CERTS = TMP / f"wc-{self._testMethodName}.json"      # per-test: no test inherits another test's certification
     def tearDown(self): TG.default_transport = _tr_orig["tg"]
     def _req(self, chat="100", text="Շնորհակալություն", op="chat.send", cert=False, **extra):
         return A.build_request(skill_id=AR, business_intent="reply on telegram", business_domain="G_COMMUNICATION", target_system="INT-TG", target_operation=op, target_object_type="chat_message", parameters={"chat_id": chat, "text": text, **extra}, expected_effect="message sent", expected_postcondition="provider accepted", source_context={"certification": cert})
@@ -129,6 +134,29 @@ class C02_TelegramWrite(unittest.TestCase):
         self.assertIsNone(CAP._write_certs().get("INT-TG", {}).get("chat.send"))                                    # provider acceptance never becomes VERIFIED_WRITE
         self.assertEqual(CAP.capability("INT-TG", "chat.send")["level"], "CONNECTED")
         rec = A.get(a["action_id"]); self.assertEqual(SEC.leaks(rec), []); self.assertEqual(rec["verification"]["independent"], False)
+    @covers(AR, CI, *GOV, kinds=("authority", "adversarial", "completion"))
+    def test_only_gevs_second_source_confirmation_can_certify_a_bot_send(self):
+        """A bot cannot read back its own message, so VERIFIED may come only from the owner's out-of-band confirmation."""
+        a = A.prepare(self._req(text="second source"), session_id="c2e"); A.approve("OK", session_id="c2e")
+        r = A.execute(a["action_id"]); self.assertEqual(r["state"], "EXECUTED_UNVERIFIED"); self.assertIn("NO_INDEPENDENT_READBACK", r["codes"])
+        for bad, code in (({"confirmed_by": "Arman", "evidence_note": "I saw it"}, "AUTHORITY_EXCEEDED"),
+                          ({"confirmed_by": "Gev", "evidence_note": "   "}, "VERIFICATION_REQUIRED")):
+            with self.assertRaises(A.ActionError) as cm: A.confirm_second_source(a["action_id"], **bad)
+            self.assertEqual(cm.exception.code, code)
+        self.assertEqual(A.get(a["action_id"])["state"], "EXECUTED_UNVERIFIED")                      # a refused confirmation changes nothing
+        fresh_card = A.prepare(self._req(text="not executed yet"), session_id="c2f")
+        with self.assertRaises(A.ActionError) as cm: A.confirm_second_source(fresh_card["action_id"], confirmed_by="Gev", evidence_note="seen")
+        self.assertEqual(cm.exception.code, "NOT_APPLICABLE")                                        # never usable on an unexecuted action
+        rep = A.confirm_second_source(a["action_id"], confirmed_by="Gev", evidence_note="Gev sees the message in the Telegram chat", ticket_id="t-sec", certify=True)
+        self.assertEqual(rep["state"], "VERIFIED"); self.assertEqual(rep["canonical"], "DONE")
+        rec = A.get(a["action_id"]); v = rec["verification"]
+        self.assertTrue(v["verified"]); self.assertTrue(v["independent"]); self.assertEqual(v["independence_source"], "HUMAN_SECOND_SOURCE")
+        self.assertEqual(v["evidence"]["second_source"]["confirmed_by"], "Gev"); self.assertTrue(v["evidence"]["provider_message_id"])
+        self.assertEqual(v["evidence"]["approved_by"], "Gev"); self.assertTrue(v["evidence"]["approval_token"])
+        self.assertEqual(CAP.capability("INT-TG", "chat.send")["level"], "VERIFIED_WRITE")
+        self.assertEqual(CAP._write_certs()["INT-TG"]["chat.send"]["action_id"], a["action_id"])
+        with self.assertRaises(A.ActionError) as cm: A.confirm_second_source(a["action_id"], confirmed_by="Gev", evidence_note="again")
+        self.assertEqual(cm.exception.code, "NOT_APPLICABLE")                                        # not repeatable once VERIFIED
     @covers(AR, *GOV, kinds=("authority", "failure", "adversarial"))
     def test_unknown_chat_denied_and_timeout_is_result_unknown_without_retry(self):
         a = A.prepare(self._req(chat="31337"), session_id="c2b"); self.assertEqual(a["state"], "DENIED"); self.assertIn("allowlist", a["reason"])

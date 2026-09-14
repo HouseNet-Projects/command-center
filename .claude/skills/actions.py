@@ -340,6 +340,34 @@ def reconcile(action_id, *, ticket_id=None):
     _audit({"execution_id": action_id, "ticket_id": ticket_id, "result_status": "RECONCILED_ABSENT", "retry_safe": a["reconciliation"]["retry_safe"]}, required=False)
     return report(a)
 
+def confirm_second_source(action_id, *, confirmed_by="Gev", evidence_note, ticket_id=None, certify=False):
+    """Close an action that CANNOT have a machine read-back (a Telegram bot cannot read back its own sent message) with an
+    out-of-band HUMAN confirmation. This is the ONLY route from NO_INDEPENDENT_READBACK to VERIFIED and it stays narrow:
+    only the owner's own confirmation counts, only an already-executed action carrying NO_INDEPENDENT_READBACK qualifies,
+    the observation must be stated, and NO provider call is made — nothing is re-sent. It can never be used to paper over a
+    VERIFICATION_MISMATCH or a still-pending provider status."""
+    a = get(action_id)
+    if not a: raise ActionError("NOT_FOUND", f"no action {action_id}")
+    if confirmed_by not in ("Gev", "Գև"): raise ActionError("AUTHORITY_EXCEEDED", "only Gev's own out-of-band confirmation counts as second-source evidence")
+    if not str(evidence_note or "").strip(): raise ActionError("VERIFICATION_REQUIRED", "a second-source confirmation must state what was observed and where")
+    if a["state"] != "EXECUTED_UNVERIFIED" or "NO_INDEPENDENT_READBACK" not in a.get("codes", []):
+        raise ActionError("NOT_APPLICABLE", f"second-source confirmation applies only to an EXECUTED_UNVERIFIED action with NO_INDEPENDENT_READBACK (this one is {a['state']} {a.get('codes')})")
+    req = a["request"]; ap = a.get("approval") or {}
+    ev = dict((a.get("verification") or {}).get("evidence") or {})
+    ev.update({"second_source": {"confirmed_by": confirmed_by, "confirmed_at": _now(), "method": "human out-of-band observation in the target chat", "observed": str(evidence_note)[:300]},
+               "approved_by": ap.get("approved_by"), "approval_token": ap.get("token_id"), "approved_at": ap.get("approved_at"),
+               "fingerprint": req.get("action_fingerprint"), "ticket_id": ticket_id})
+    a["verification"] = {**(a.get("verification") or {}), "at": _now(), "verified": True, "independent": True, "independence_source": "HUMAN_SECOND_SOURCE",
+                         "reason": f"provider accepted (message id {ev.get('provider_message_id')}) and {confirmed_by} independently confirmed the message is visible in the target chat", "evidence": ev}
+    a["state"] = "VERIFIED"; a["codes"] = [c for c in a.get("codes", []) if c != "NO_INDEPENDENT_READBACK"] + ["SECOND_SOURCE_CONFIRMED"]
+    a["history"].append({"at": _now(), "state": "VERIFIED", "code": "SECOND_SOURCE_CONFIRMED", "by": confirmed_by})
+    a["memory"] = _update_memory(a); _save(a)
+    _audit({"execution_id": a["action_id"], "ticket_id": ticket_id, "result_status": "VERIFIED", "code": "SECOND_SOURCE_CONFIRMED", "confirmed_by": confirmed_by, "evidence": ev}, required=False)
+    if certify:
+        from capabilities import record_write_certification
+        a["certification"] = record_write_certification(req["target_system"], req["target_operation"], a["action_id"], ev); _save(a)
+    return report(a)
+
 def _update_memory(a):
     """UPDATE MEMORY / OPEN LOOP after a VERIFIED write — Deputy's own store, referencing (never overwriting) the external truth."""
     import executors

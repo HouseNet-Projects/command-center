@@ -71,5 +71,27 @@
     "migrated_from": "2026-09-12T04:39:55"
    }
   }
+ },
+ "INT-TG": {
+  "chat.send": {
+   "action_id": "ACT-ec73ff5b12",
+   "verified_at": "2026-09-14T12:44:04",
+   "evidence": {
+    "at": "2026-09-14T12:34:11",
+    "chat_id": "786018459",
+    "provider_message_id": "4",
+    "second_source": {
+     "confirmed_by": "Gev",
+     "confirmed_at": "2026-09-14T12:44:04",
+     "method": "human out-of-band observation in the target chat",
+     "observed": "Gev confirmed in Telegram that the message 'TEST — Deputy Telegram live write certification' is visible in his private chat 786018459"
+    },
+    "approved_by": "Gev",
+    "approval_token": "APR-f5ba34e296a3",
+    "approved_at": "2026-09-14T12:34:11",
+    "fingerprint": "421ba2979bb2d1d47e0b9b4e20488f12",
+    "ticket_id": "88f3cc450b"
+   }
+  }
  }
 }

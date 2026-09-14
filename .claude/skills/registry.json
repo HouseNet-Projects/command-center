@@ -409,7 +409,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "24df47cc75595dc048bfff4e",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/executive_prioritization.json"
    },
    "last_verified": "2026-09-14"
@@ -514,7 +514,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "4f29aa5cb8995d7c44f31da6",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/task_management.json"
    },
    "last_verified": "2026-09-14"
@@ -706,9 +706,9 @@
    "evidence": {
     "tests": 23,
     "failure_tests": 13,
-    "hardening_cases": 22,
-    "authority_tests": 19,
-    "completion_verification": 15,
+    "hardening_cases": 23,
+    "authority_tests": 20,
+    "completion_verification": 16,
     "evals": 22,
     "routing_evals": 4,
     "concurrency_tests": 2,
@@ -718,7 +718,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "706bc7ec8d2b5e8f58edd61b",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/action_runtime.json"
    },
    "last_verified": "2026-09-14"
@@ -820,7 +820,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "90567aee4dd8796ffed55b69",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/delegation_design.json"
    },
    "last_verified": "2026-09-14"
@@ -929,7 +929,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "c5b40e5b031ea99985ce3183",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/commitment_tracking.json"
    },
    "last_verified": "2026-09-14"
@@ -1038,7 +1038,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "15432e57cc633b64818cf5c0",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/waiting_for_tracking.json"
    },
    "last_verified": "2026-09-14"
@@ -1139,7 +1139,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "02916c89318b78e131450752",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/deadline_management.json"
    },
    "last_verified": "2026-09-14"
@@ -1222,7 +1222,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "0f37e297b37eed755143e90d",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/reminder_intelligence.json"
    },
    "last_verified": "2026-09-14"
@@ -1336,7 +1336,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "94da5f23389be7b6546e57f6",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/follow_up_management.json"
    },
    "last_verified": "2026-09-14"
@@ -1427,7 +1427,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "2bd9515bd362ac87f5fb62b5",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/escalation_management.json"
    },
    "last_verified": "2026-09-14"
@@ -1539,7 +1539,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "faa96b6c0cbad0de5bce1d1c",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/decision_support.json"
    },
    "last_verified": "2026-09-14"
@@ -1638,7 +1638,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "fbe871a79c294d7d8044b6bf",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/decision_logging.json"
    },
    "last_verified": "2026-09-14"
@@ -1708,9 +1708,9 @@
    "evidence": {
     "tests": 140,
     "failure_tests": 59,
-    "hardening_cases": 91,
-    "authority_tests": 34,
-    "completion_verification": 43,
+    "hardening_cases": 92,
+    "authority_tests": 35,
+    "completion_verification": 44,
     "evals": 28,
     "routing_evals": 5,
     "concurrency_tests": 4,
@@ -1720,7 +1720,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "4e3b34be5b647517e217da29",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/approval_management.json"
    },
    "last_verified": "2026-09-14"
@@ -1837,7 +1837,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "42fc6d6c890d0240d359a129",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/meeting_preparation.json"
    },
    "last_verified": "2026-09-14"
@@ -1956,7 +1956,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "3fa244a6273c637b64368697",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/daily_briefing.json"
    },
    "last_verified": "2026-09-14"
@@ -2105,7 +2105,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "d96e407576c289d5f4a50b9e",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/management_snapshot.json"
    },
    "last_verified": "2026-09-14"
@@ -2208,7 +2208,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "4c2ad3211d2cd4010f4f6c29",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/exception_review.json"
    },
    "last_verified": "2026-09-14"
@@ -2305,7 +2305,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "b1ea05651fe0bde82342eaa3",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/change_review.json"
    },
    "last_verified": "2026-09-14"
@@ -2404,7 +2404,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "259f12e3fe7839e473315535",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/decision_queue.json"
    },
    "last_verified": "2026-09-14"
@@ -2506,9 +2506,9 @@
    "evidence": {
     "tests": 15,
     "failure_tests": 5,
-    "hardening_cases": 10,
-    "authority_tests": 5,
-    "completion_verification": 2,
+    "hardening_cases": 11,
+    "authority_tests": 6,
+    "completion_verification": 3,
     "evals": 7,
     "routing_evals": 2,
     "concurrency_tests": 0,
@@ -2518,7 +2518,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "2b6c32e80bffc91570f1fac2",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/channel_intelligence.json"
    },
    "last_verified": "2026-09-14"
@@ -2614,7 +2614,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "dba8dca12873efb577bc39e0",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/people_resolver.json"
    },
    "last_verified": "2026-09-14"
@@ -2710,7 +2710,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "974a4f9a28edbd48b7e9ecba",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/kpi_intelligence.json"
    },
    "last_verified": "2026-09-14"
@@ -2801,7 +2801,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "5d4ec5e6cb7c1e847923a4ad",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/meeting_notes.json"
    },
    "last_verified": "2026-09-14"
@@ -2897,7 +2897,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "160e759a396f3279657a63e6",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/alert_review.json"
    },
    "last_verified": "2026-09-14"
@@ -2983,7 +2983,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "c8566491cb5df93895bb6c58",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/end_of_day_control.json"
    },
    "last_verified": "2026-09-14"
@@ -3066,7 +3066,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "f2d749049ccf0bc9539a432f",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/weekly_executive_review.json"
    },
    "last_verified": "2026-09-14"
@@ -3146,7 +3146,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "1f43e51e0d26c7334b2e6f73",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/sales_kpi_monitoring.json"
    },
    "last_verified": "2026-09-14"
@@ -3227,7 +3227,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "777c1e78f9791ea3f0f26c25",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/target_vs_actual.json"
    },
    "last_verified": "2026-09-14"
@@ -3310,7 +3310,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "b09dbe039cbcbafd42c9e76c",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/sales_forecasting.json"
    },
    "last_verified": "2026-09-14"
@@ -3395,7 +3395,7 @@
     "maturity_level": "L0",
     "result": "PASS",
     "fingerprint": "af9af8797460dbc4cd9aa0ab",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/sales_funnel_analysis.json"
    },
    "last_verified": null
@@ -3472,7 +3472,7 @@
     "maturity_level": "L0",
     "result": "PASS",
     "fingerprint": "1c149258029c5fd3f964586e",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/pipeline_management.json"
    },
    "last_verified": null
@@ -3551,7 +3551,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "1838573f796359c585a61cf7",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/channel_performance_analysis.json"
    },
    "last_verified": "2026-09-14"
@@ -3628,7 +3628,7 @@
     "maturity_level": "L0",
     "result": "PASS",
     "fingerprint": "278a848f06eb67ea13c1b352",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/lost_opportunity_analysis.json"
    },
    "last_verified": null
@@ -3706,7 +3706,7 @@
     "maturity_level": "L0",
     "result": "PASS",
     "fingerprint": "e09453a31e4e666f621cc144",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/upsell_analysis.json"
    },
    "last_verified": null
@@ -3783,7 +3783,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "e8657a9b7dd2f09ae05790f2",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/customer_acquisition_analysis.json"
    },
    "last_verified": "2026-09-14"
@@ -3866,7 +3866,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "82cc02c94dcfc6b3170d718d",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/churn_analysis.json"
    },
    "last_verified": "2026-09-14"
@@ -3943,7 +3943,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "f434b5904fb8dcf2ceb07295",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/revenue_leakage_detection.json"
    },
    "last_verified": "2026-09-14"
@@ -4019,7 +4019,7 @@
     "maturity_level": "L0",
     "result": "PASS",
     "fingerprint": "228d3f72940ee55238d9860d",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/campaign_performance_analysis.json"
    },
    "last_verified": null
@@ -4097,7 +4097,7 @@
     "maturity_level": "L0",
     "result": "PASS",
     "fingerprint": "34e64062ea2f9dd232d88d74",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/pricing_performance_analysis.json"
    },
    "last_verified": null
@@ -4184,7 +4184,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "ebb0f4c099078fa142517a26",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/operations_kpi_monitoring.json"
    },
    "last_verified": "2026-09-14"
@@ -4267,7 +4267,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "1c62072f7721197711959fd9",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/workload_analysis.json"
    },
    "last_verified": "2026-09-14"
@@ -4348,7 +4348,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "494f482162d6841b7ad010cc",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/backlog_management.json"
    },
    "last_verified": "2026-09-14"
@@ -4426,7 +4426,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "635652e0f5227526a7b81b85",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/bottleneck_detection.json"
    },
    "last_verified": "2026-09-14"
@@ -4502,7 +4502,7 @@
     "maturity_level": "L0",
     "result": "PASS",
     "fingerprint": "5213106e59ee0607fb4f1be6",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/failure_rework_analysis.json"
    },
    "last_verified": null
@@ -4579,7 +4579,7 @@
     "maturity_level": "L0",
     "result": "PASS",
     "fingerprint": "ae7f64527491d70c4136681f",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/operational_incident_management.json"
    },
    "last_verified": null
@@ -4654,7 +4654,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "c862f3cea5e2c86091a11909",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/customer_complaint_pattern_analysis.json"
    },
    "last_verified": "2026-09-14"
@@ -4730,7 +4730,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "46db3ed8daa770b8d626239e",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/operational_risk_detection.json"
    },
    "last_verified": "2026-09-14"
@@ -4827,7 +4827,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "cf22aa550965d84eafd334bd",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/performance_gap_diagnosis.json"
    },
    "last_verified": "2026-09-14"
@@ -4917,7 +4917,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "80c4d8edaa29d9e6572e5133",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/root_cause_analysis.json"
    },
    "last_verified": "2026-09-14"
@@ -5004,7 +5004,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "1c1809dc51f70efee4073416",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/process_mapping.json"
    },
    "last_verified": "2026-09-14"
@@ -5089,7 +5089,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "54d902931593e53b63f5fd13",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/process_improvement.json"
    },
    "last_verified": "2026-09-14"
@@ -5168,7 +5168,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "4387d6abd8f0be50442468b4",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/automation_opportunity_detection.json"
    },
    "last_verified": "2026-09-14"
@@ -5280,7 +5280,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "f9bfaa69a96b2235a6483d57",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/data_analysis.json"
    },
    "last_verified": "2026-09-14"
@@ -5368,7 +5368,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "c6b415b40bcf8f165975ab77",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/source_reconciliation.json"
    },
    "last_verified": "2026-09-14"
@@ -5452,7 +5452,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "0eedf662bba96ef3d4cf9d7f",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/executive_reporting.json"
    },
    "last_verified": "2026-09-14"
@@ -5537,7 +5537,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "bf19b643aacd809e08fa1d98",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/information_classification.json"
    },
    "last_verified": "2026-09-14"
@@ -5621,7 +5621,7 @@
     "maturity_level": "L1",
     "result": "PASS",
     "fingerprint": "037e9c0cfd979762c3e6527a",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/executive_summarization.json"
    },
    "last_verified": "2026-09-14"
@@ -5727,7 +5727,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "74fdd86515f0f14aa1fcfed7",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/management_communication.json"
    },
    "last_verified": "2026-09-14"
@@ -5802,7 +5802,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "eca70e6c796a97cfab80446c",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/communication_quality_checking.json"
    },
    "last_verified": "2026-09-14"
@@ -5906,7 +5906,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "14c15c0e5ac3d3745ce999ef",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/commitment_memory.json"
    },
    "last_verified": "2026-09-14"
@@ -6003,7 +6003,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "59e3e6a096a57f2719567313",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/decision_memory.json"
    },
    "last_verified": "2026-09-14"
@@ -6098,7 +6098,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "3f52be9d5103792d1eb5e700",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/information_retrieval.json"
    },
    "last_verified": "2026-09-14"
@@ -6199,7 +6199,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "a837edb78cfb78a00deda010",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/open_loop_memory.json"
    },
    "last_verified": "2026-09-14"
@@ -6306,7 +6306,7 @@
     "maturity_level": "L3",
     "result": "PASS",
     "fingerprint": "8f1c2664c735a62da5dcb065",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/business_model_query.json"
    },
    "last_verified": "2026-09-14"
@@ -6379,9 +6379,9 @@
    "evidence": {
     "tests": 142,
     "failure_tests": 61,
-    "hardening_cases": 94,
-    "authority_tests": 36,
-    "completion_verification": 43,
+    "hardening_cases": 95,
+    "authority_tests": 37,
+    "completion_verification": 44,
     "evals": 29,
     "routing_evals": 6,
     "concurrency_tests": 4,
@@ -6391,7 +6391,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "86f92719730ec5a3a64d0e84",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/authority_checking.json"
    },
    "last_verified": "2026-09-14"
@@ -6476,7 +6476,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "137c298f04d02c9dfb13dc77",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/risk_classification.json"
    },
    "last_verified": "2026-09-14"
@@ -6552,7 +6552,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "661e974a14634225b3372eac",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/data_sensitivity_awareness.json"
    },
    "last_verified": "2026-09-14"
@@ -6623,9 +6623,9 @@
    "evidence": {
     "tests": 142,
     "failure_tests": 61,
-    "hardening_cases": 93,
-    "authority_tests": 28,
-    "completion_verification": 44,
+    "hardening_cases": 94,
+    "authority_tests": 29,
+    "completion_verification": 45,
     "evals": 25,
     "routing_evals": 5,
     "concurrency_tests": 4,
@@ -6635,7 +6635,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "237cdf9cefe352270b432b0e",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/completion_verification.json"
    },
    "last_verified": "2026-09-14"
@@ -6699,9 +6699,9 @@
    "evidence": {
     "tests": 145,
     "failure_tests": 59,
-    "hardening_cases": 105,
-    "authority_tests": 28,
-    "completion_verification": 44,
+    "hardening_cases": 106,
+    "authority_tests": 29,
+    "completion_verification": 45,
     "evals": 25,
     "routing_evals": 6,
     "concurrency_tests": 8,
@@ -6711,7 +6711,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "d006ba8b0552521b818be9f4",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/audit_logging.json"
    },
    "last_verified": "2026-09-14"
@@ -6796,7 +6796,7 @@
     "maturity_level": "L4",
     "result": "PASS",
     "fingerprint": "0c8a053437f2a96d22e4ad05",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/source_verification.json"
    },
    "last_verified": "2026-09-14"
@@ -6872,7 +6872,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "2a99ddfc109bedc37a516791",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/confidence_handling.json"
    },
    "last_verified": "2026-09-14"
@@ -6956,7 +6956,7 @@
     "maturity_level": "L2",
     "result": "PASS",
     "fingerprint": "c3cca71a0d83f728bcdfd64e",
-    "certified_at": "2026-09-14T12:26:50",
+    "certified_at": "2026-09-14T12:48:23",
     "record": "certifications/structured_data_extraction.json"
    },
    "last_verified": "2026-09-14"
@@ -7325,7 +7325,7 @@
   "retired": 71
  },
  "certified": {
-  "at": "2026-09-14T12:26:50",
+  "at": "2026-09-14T12:48:23",
   "suites": [
    "test_skills",
    "test_store",
@@ -7345,8 +7345,8 @@
    "test_channels",
    "test_operating_layer"
   ],
-  "tests_run": 408,
-  "tests_passed": 408,
+  "tests_run": 409,
+  "tests_passed": 409,
   "evals_run": 136,
   "evals_passed": 136,
   "core_fingerprint": "c4fc99c8a9df60f4",
