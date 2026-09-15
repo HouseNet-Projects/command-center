@@ -1,0 +1,36 @@
+import json, tempfile, unittest
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).parents[1] / 'architecture'))
+from runtime_integration import DeputyRuntime, RuntimeBlocked, resolve_truth
+
+class RuntimeIntegrationTests(unittest.TestCase):
+    def runtime(self):
+        return DeputyRuntime(state_dir=tempfile.mkdtemp())
+
+    def test_multi_brain_plan_is_one_deputy_and_persists(self):
+        r = self.runtime(); out = r.plan('Why has churn increased?')
+        self.assertEqual(out['identity'], 'DEPUTY'); self.assertTrue(out['routing']['synthesis_required'])
+        self.assertEqual(r.load_plan(out['op_id'])['identity'], 'DEPUTY')
+        again = r.plan('Why has churn increased?'); self.assertTrue(again['duplicate'])
+
+    def test_material_action_requires_approval(self):
+        out = self.runtime().prepare_material_action({'type':'send_email'})
+        self.assertEqual(out['status'], 'APPROVAL_REQUIRED'); self.assertFalse(out['approved'])
+
+    def test_completion_requires_evidence(self):
+        r=self.runtime(); node=r.plan('Create a sales action plan')['graph'][0]
+        with self.assertRaises(RuntimeBlocked): r.complete(node, None)
+        self.assertEqual(r.complete(node, {'source':'test'})['status'], 'VERIFIED')
+
+    def test_capability_fails_closed(self):
+        with self.assertRaises(RuntimeBlocked): self.runtime().discover_capability('missing')
+        r=DeputyRuntime(state_dir=tempfile.mkdtemp(), capabilities={'k':{'registered':True,'certification':'certified'}})
+        self.assertEqual(r.discover_capability('k')['certification'],'certified')
+
+    def test_truth_requires_current_provenance_and_conflict_fails(self):
+        with self.assertRaises(RuntimeBlocked): resolve_truth([{'owner':'x','authority':'current','value':1}])
+        with self.assertRaises(RuntimeBlocked): resolve_truth([{'owner':'x','authority':'current','value':1,'provenance':'a'}, {'owner':'y','authority':'current','value':2,'provenance':'b'}])
+        self.assertEqual(resolve_truth([{'owner':'x','authority':'current','value':1,'provenance':'a'}, {'owner':'z','authority':'history','value':2,'provenance':'b'}])['value'],1)
+
+if __name__ == '__main__': unittest.main()
