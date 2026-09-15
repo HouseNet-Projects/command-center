@@ -1,0 +1,35 @@
+name: Command-center CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: command-center-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  policy-gate:
+    name: HouseNet policy gate
+    uses: HouseNet-Projects/house-net-control-plane/.github/workflows/reusable-policy-gate.yml@b393373f37884d0734fecf4160f91ac9e514481e
+  deputy-tests:
+    name: Deputy tests and evaluations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Install locked Deputy runtime
+        run: python -m pip install --require-hashes --no-deps -r .claude/runtime/requirements.lock
+      - name: Run Deputy tests and evals
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+          COMMAND_CENTER_TEST_MODE: '1'
+        run: python -m unittest discover -s .claude/tests -v
