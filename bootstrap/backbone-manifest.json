@@ -1,0 +1,9 @@
+{
+  "schema": "housenet.backbone.bootstrap.v1",
+  "control_plane": {"repository":"HouseNet-Projects/house-net-control-plane","policy_version":"1.4.2","policy_commit":"4673d4bf692b8ac2c55a82306a22fc0fa263c259"},
+  "repositories": [
+    {"id":"knowledge","repository":"HouseNet-Projects/house-net-knowledge","branch":"main","required":true,"path_env":"HOUSENET_KNOWLEDGE_PATH"},
+    {"id":"vault","repository":"HouseNet-Projects/house-net-vault","branch":"main","required":true,"path_env":"HOUSENET_VAULT_PATH"}
+  ],
+  "restore": {"dry_run_default":true,"allowed_local_state":["bootstrap/reports"],"destructive_overwrite":false}
+}
