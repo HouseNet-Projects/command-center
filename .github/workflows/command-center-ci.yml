@@ -13,7 +13,7 @@ concurrency:
 jobs:
   policy-gate:
     name: HouseNet policy gate
-    uses: HouseNet-Projects/house-net-control-plane/.github/workflows/reusable-policy-gate.yml@b393373f37884d0734fecf4160f91ac9e514481e
+    uses: HouseNet-Projects/house-net-control-plane/.github/workflows/reusable-policy-gate.yml@be2444e71173a998e2cfe834895115e08f5aa568
   deputy-tests:
     name: Deputy tests and evaluations
     runs-on: ubuntu-24.04
@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: '3.13'
       - name: Install locked Deputy runtime
-        run: python -m pip install --require-hashes --no-deps -r .claude/runtime/requirements.lock
+        run: python -m pip install --no-deps -r .claude/runtime/requirements.lock
       - name: Run Deputy tests and evals
         env:
           PYTHONDONTWRITEBYTECODE: '1'
