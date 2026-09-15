@@ -23,6 +23,14 @@ class RuntimeIntegrationTests(unittest.TestCase):
         with self.assertRaises(RuntimeBlocked): r.complete(node, None)
         self.assertEqual(r.complete(node, {'source':'test'})['status'], 'VERIFIED')
 
+    def test_strategy_inbound_output_followthrough_fail_closed(self):
+        r=self.runtime()
+        self.assertIn("MISSING_KPI", r.strategy_assessment("sales plan")["gaps"])
+        with self.assertRaises(RuntimeBlocked): r.reconcile_inbound({"text":"do it"})
+        self.assertEqual(r.reconcile_inbound({"text":"do it","channel":"email","source_id":"m1","provenance":{"message":"m1"}})["status"], "PROPOSAL_ONLY")
+        self.assertEqual(r.compose_output("report", provenance={"source":"test"})["status"], "TEMPLATE_GAP")
+        self.assertEqual(r.follow_through([{"id":"t","status":"BLOCKED","owner":"GEV"}])["status"], "READY")
+
     def test_capability_fails_closed(self):
         with self.assertRaises(RuntimeBlocked): self.runtime().discover_capability('missing')
         r=DeputyRuntime(state_dir=tempfile.mkdtemp(), capabilities={'k':{'registered':True,'certification':'certified'}})
