@@ -21,4 +21,18 @@ class ArchitectureTests(unittest.TestCase):
  def test_unknown_owner_rejected(self):
   n=work_orchestrator.create_node('GOAL','Sales plan')
   self.assertTrue(work_orchestrator.validate_graph([n]))
+class InboundTests(unittest.TestCase):
+ def test_message_yields_multiple_candidates_and_provenance(self):
+  import inbound_intelligence as ii
+  e=ii.event('Please prepare the decision by Friday; blocked on billing',channel='mail',source_id='msg-1',retrieved_at='2026-09-16T00:00:00Z')
+  self.assertIn('DECISION_REQUIRED',e['event_classes']); self.assertIn('DEADLINE',e['event_classes']); self.assertIn('BLOCKER',e['event_classes']); self.assertTrue(ii.assert_safe(e))
+ def test_external_message_cannot_grant_approval(self):
+  import inbound_intelligence as ii
+  e=ii.event('approve and send now',channel='telegram',source_id='msg-2',retrieved_at='2026-09-16T00:00:00Z')
+  e['can_grant_approval']=True
+  with self.assertRaises(ValueError): ii.assert_safe(e)
+ def test_missing_provenance_rejected(self):
+  import inbound_intelligence as ii
+  with self.assertRaises(ValueError): ii.event('x',channel='',source_id='m',retrieved_at='now')
+
 if __name__=='__main__': unittest.main()
