@@ -35,9 +35,9 @@ Solid connectors show governed control flow. The Store remains the durable sourc
 
 - [`house-net-control.json`](house-net-control.json) — repository registration lock.
 - [`AGENTS.md`](AGENTS.md) — provider-neutral HouseNet bootstrap map.
-- [`CLAUDE.md`](CLAUDE.md) — local adapter and Deputy charter.
+- **Local adapter contract** — provider-neutral execution instructions and Deputy charter.
 - [`WORKSPACE/`](WORKSPACE/) — operational workspace and registers.
-- [`.claude/`](.claude/) — runtime, policy, skills, integrations and tests.
+- **Execution adapter directory** — runtime, policy, skills, integrations and tests.
 - [`.secure/README.md`](.secure/README.md) — encrypted recovery design; the recovery key remains outside Git.
 - [`assets/brand/README.md`](assets/brand/README.md) — local presentation asset provenance.
 
@@ -76,9 +76,9 @@ flowchart LR
 
 - [`house-net-control.json`](house-net-control.json) — repository registration lock-ը։
 - [`AGENTS.md`](AGENTS.md) — HouseNet-ի provider-neutral bootstrap քարտեզը։
-- [`CLAUDE.md`](CLAUDE.md) — local adapter-ը և Deputy charter-ը։
+- **Տեղական adapter contract** — provider-neutral execution instructions և Deputy charter։
 - [`WORKSPACE/`](WORKSPACE/) — operational workspace-ը և register-ները։
-- [`.claude/`](.claude/) — runtime, policy, skills, integrations և tests։
+- **Execution adapter directory** — runtime, policy, skills, integrations և tests։
 - [`.secure/README.md`](.secure/README.md) — encrypted recovery-ի նկարագրությունը․ recovery key-ը Git-ից դուրս է։
 - [`assets/brand/README.md`](assets/brand/README.md) — local presentation asset-ի provenance-ը։
 
