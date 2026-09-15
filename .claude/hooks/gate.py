@@ -91,7 +91,14 @@ def _scope():
     return scope
 
 def _rel(p):
-    """Repository-relative path, or None when the target is outside this workspace (not this contract's business)."""
+    """Repository-relative path, or None when the target is outside this workspace.
+
+    Drive-qualified paths are Windows paths even when the gate runs under Linux
+    (for example, in the cross-platform evaluation suite); they must remain
+    external targets rather than becoming a literal ``C:`` repository folder.
+    """
+    if re.match(r"^[A-Za-z]:[\\/]", str(p)):
+        return None
     try: return pathlib.Path(p).resolve().relative_to(ROOT.resolve()).as_posix()
     except (ValueError, OSError): return None
 
