@@ -1,75 +1,87 @@
-# Command-center · Deputy
+<p align="center"><img src="assets/command-center-hero.svg" alt="HouseNet Command Center — Deputy operations and intelligence workspace" width="100%"></p>
+
+<p align="center"><strong>HOUSE NET · COMMAND CENTER</strong><br>Deputy’s governed operations, intelligence and action workspace.</p>
+
+<p align="center"><a href="https://github.com/HouseNet-Projects/house-net-command-center/actions/workflows/command-center-ci.yml"><img alt="Command Center CI" src="https://github.com/HouseNet-Projects/house-net-command-center/actions/workflows/command-center-ci.yml/badge.svg?branch=main"></a> <strong>CLASS A · PUBLIC</strong> · <a href="https://github.com/HouseNet-Projects/house-net-control-plane">CONTROL PLANE</a></p>
 
 ## English
 
-**Command-center** is Gev’s operational workspace for Sales & Operations, managed by **Deputy — AI Chief of Staff for Sales & Operations**.
+This is the canonical HouseNet home for **Command-center** and its **Deputy** agent identity. The repository preserves the working runtime and its durable architecture while applying the HouseNet governance boundary around it.
 
-This private Class A HouseNet repository preserves the complete legacy history and provides the governed home for the existing Deputy runtime. The migration wraps the working architecture; it does not replace the Store, Action Runtime, approval boundary, Skill System, integrations, or recovery model.
+### What this surface owns
 
-### Current status
-
-| Surface | State |
-|---|---|
-| Migration | `MIGRATED` · certification pending |
-| Control Plane | HouseNet policy `1.3.0` |
-| History | Full history preserved from `d49d60bdff468b662d88d21e00458ce59646a5ca` |
-| Data boundaries | Core/internal, business/confidential, credentials/restricted |
-| Runtime | Existing Python/Windows/WSL/GPG/Git LFS assumptions preserved |
-| Canonical status | Not canonical until certification and owner cutover |
-
-### Start here
-
-- [`house-net-control.json`](house-net-control.json) — immutable repository registration lock.
-- [`AGENTS.md`](AGENTS.md) — provider-neutral HouseNet bootstrap map.
-- [`CLAUDE.md`](CLAUDE.md) — Claude adapter; preserved Deputy charter is linked from it.
-- [`WORKSPACE/`](WORKSPACE/) — operational workspace and live registers.
-- [`.claude/`](.claude/) — Deputy runtime, policy, skills, integrations, tests, and durable state.
-- [`.secure/README.md`](.secure/README.md) — encrypted recovery design; the recovery key remains outside Git.
-- [`legacy README`](.claude/docs/legacy/README-command-center-original.md) — preserved pre-migration landing documentation.
+| Domain | Boundary |
+| :--- | :--- |
+| **Deputy runtime** | Existing skills, intelligence and operational behavior |
+| **Store** | Existing durable state and recovery model |
+| **Action Runtime** | Existing approval-aware execution boundary |
+| **Integrations** | Existing certified adapters and provider contracts |
+| **Evidence** | Tests, evaluations, recovery notes and migration records |
 
 ### Governance flow
 
 ```mermaid
 flowchart LR
-  CP[HouseNet Control Plane 1.3.0] --> PRE[Preflight + registration]
+  CP[HouseNet Control Plane] --> PRE[Preflight + registration]
   PRE --> D[Deputy runtime]
-  D --> STORE[Existing Store + durable exports]
-  D --> ACT[Action Runtime + Gev approval]
-  ACT --> INT[Certified integrations]
+  D --> S[(Existing Store)]
+  D --> A[Action Runtime]
+  A --> I[Certified integrations]
 ```
 
-The Control Plane is the outer governance authority. Local Deputy policy remains the authority for its internal workspace contract. External systems remain authoritative for their own live records. Caches and generated views never become competing truth sources.
+Solid connectors show governed control flow. The Store remains the durable source for runtime state; external systems remain authoritative for their own records. Caches and generated views are not competing truth sources.
+
+### Start here
+
+- [`house-net-control.json`](house-net-control.json) — repository registration lock.
+- [`AGENTS.md`](AGENTS.md) — provider-neutral HouseNet bootstrap map.
+- [`CLAUDE.md`](CLAUDE.md) — local adapter and Deputy charter.
+- [`WORKSPACE/`](WORKSPACE/) — operational workspace and registers.
+- [`.claude/`](.claude/) — runtime, policy, skills, integrations and tests.
+- [`.secure/README.md`](.secure/README.md) — encrypted recovery design; the recovery key remains outside Git.
+- [`assets/brand/README.md`](assets/brand/README.md) — local presentation asset provenance.
 
 ### Safety boundary
 
-Secrets, provider credentials, production databases, live provider records, and machine-local recovery keys are not imported into source history. The already-versioned `.secure/credentials.gpg` artifact is preserved unchanged as an opaque encrypted recovery artifact under the approved full-history decision.
+Secrets, provider credentials, production databases, live provider records and machine-local recovery keys are not added to source history. The approved encrypted recovery artifact remains opaque and unchanged. Provider-specific adapters are runtime integration details; HouseNet governance remains provider-neutral.
 
 ## Հայերեն
 
-**Command-center**-ը Գևի Sales & Operations գործառնական աշխատանքային միջավայրն է, որը կառավարվում է **Deputy — Sales & Operations-ի AI Chief of Staff**-ի կողմից։
+Սա HouseNet-ի **Command-center**-ի և նրա **Deputy** agent identity-ի կանոնական տունն է։ Պահոցը պահպանում է գործող runtime-ը և durable architecture-ը՝ դրա շուրջ կիրառելով HouseNet-ի governance boundary-ը։
 
-Այս private Class A HouseNet repository-ն պահպանում է ամբողջ legacy պատմությունը և դառնում է Deputy-ի գործող runtime-ի կառավարվող տունը։ Միգրացիան փաթեթավորում է գործող ճարտարապետությունը և չի փոխարինում Store-ը, Action Runtime-ը, approval սահմանը, Skill System-ը, ինտեգրացիաները կամ recovery մոդելը։
+### Ինչն է պատկանում այս մակերեսին
 
-### Ներկա վիճակ
+| Տիրույթ | Սահման |
+| :--- | :--- |
+| **Deputy runtime** | Գործող skills, intelligence և operational behavior |
+| **Store** | Գործող durable state և recovery model |
+| **Action Runtime** | Գործող approval-aware execution boundary |
+| **Integrations** | Գործող certified adapters և provider contracts |
+| **Evidence** | Tests, evaluations, recovery notes և migration records |
 
-| Մակերես | Վիճակ |
-|---|---|
-| Միգրացիա | `MIGRATED` · certification-ը սպասվում է |
-| Control Plane | HouseNet policy `1.3.0` |
-| Պատմություն | Ամբողջ պատմությունը պահպանված է `d49d60bdff468b662d88d21e00458ce59646a5ca`-ից |
-| Տվյալների սահմաններ | core/internal, business/confidential, credentials/restricted |
-| Runtime | Գործող Python/Windows/WSL/GPG/Git LFS ենթադրությունները պահպանված են |
-| Canonical վիճակ | Canonical չէ մինչև certification-ը և owner cutover-ը |
+### Կառավարման հոսք
+
+```mermaid
+flowchart LR
+  CP[HouseNet Control Plane] --> PRE[Preflight + registration]
+  PRE --> D[Deputy runtime]
+  D --> S[(Existing Store)]
+  D --> A[Action Runtime]
+  A --> I[Certified integrations]
+```
+
+Հոծ կապերը ցույց են տալիս governed control flow-ը։ Store-ը մնում է runtime state-ի durable source-ը, իսկ արտաքին համակարգերը՝ իրենց record-ների authoritative աղբյուրը։ Cache-երը և generated view-երը առանձին truth source չեն։
 
 ### Որտեղից սկսել
 
-- [`house-net-control.json`](house-net-control.json) — repository-ի immutable registration lock-ը։
+- [`house-net-control.json`](house-net-control.json) — repository registration lock-ը։
 - [`AGENTS.md`](AGENTS.md) — HouseNet-ի provider-neutral bootstrap քարտեզը։
-- [`CLAUDE.md`](CLAUDE.md) — Claude adapter-ը և պահպանված Deputy charter-ը։
-- [`WORKSPACE/`](WORKSPACE/) — գործառնական workspace-ը և live register-ները։
-- [`.claude/`](.claude/) — Deputy runtime-ը, policy-ն, skills-ը, integrations-ը, tests-ը և durable state-ը։
-- [`.secure/README.md`](.secure/README.md) — գաղտնագրված recovery-ի նկարագրությունը․ բանալին Git-ից դուրս է։
+- [`CLAUDE.md`](CLAUDE.md) — local adapter-ը և Deputy charter-ը։
+- [`WORKSPACE/`](WORKSPACE/) — operational workspace-ը և register-ները։
+- [`.claude/`](.claude/) — runtime, policy, skills, integrations և tests։
+- [`.secure/README.md`](.secure/README.md) — encrypted recovery-ի նկարագրությունը․ recovery key-ը Git-ից դուրս է։
+- [`assets/brand/README.md`](assets/brand/README.md) — local presentation asset-ի provenance-ը։
 
 ### Անվտանգության սահման
 
-Գաղտնիքները, provider credentials-ը, production database-ները, live provider records-ը և machine-local recovery key-ը source history չեն մտնում։ Արդեն versioned `.secure/credentials.gpg` artifact-ը պահպանվում է անփոփոխ՝ որպես opaque encrypted recovery artifact՝ owner-ի full-history որոշման համաձայն։
+Գաղտնիքները, provider credentials-ը, production database-ները, live provider record-ները և machine-local recovery key-երը source history չեն մտնում։ Հաստատված encrypted recovery artifact-ը մնում է opaque և անփոփոխ։ Provider-specific adapter-ները runtime integration-ի մանրամասներ են, իսկ HouseNet governance-ը մնում է provider-neutral։
