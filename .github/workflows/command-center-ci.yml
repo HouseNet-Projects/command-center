@@ -30,7 +30,9 @@ jobs:
       - name: Install locked Deputy runtime
         run: python -m pip install --no-deps -r .claude/runtime/requirements.lock
       - name: Initialize Deputy test workspace (no secrets)
-        run: python bootstrap.py --no-secrets --json
+        run: |
+          python .claude/policy/sensitive_scan.py --install-hooks
+          python .claude/business/build_business_model.py
       - name: Run Deputy tests and evals
         env:
           PYTHONDONTWRITEBYTECODE: '1'
