@@ -5,7 +5,7 @@ Canonical tree manifest · empty-directory survival (.gitkeep) · tree parity ·
 integration detection · no dependence on the original absolute path · CLEAN-CLONE BOOTSTRAP (twice → idempotent) with only
 Git + a recovery key as inputs (the venv is shared through COMMAND_CENTER_VENV to keep the suite fast; the official clean-machine
 run in the mission report builds its own venv)."""
-import unittest, json, os, sys, pathlib, tempfile, shutil, subprocess, hashlib
+import unittest, json, os, sys, pathlib, tempfile, shutil, subprocess, hashlib, re
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE)); sys.path.insert(0, str(ROOT / ".claude" / "policy")); sys.path.insert(0, str(ROOT / ".claude" / "runtime")); sys.path.insert(0, str(ROOT / ".claude" / "skills")); sys.path.insert(0, str(ROOT / ".claude" / "integrations"))
@@ -89,6 +89,10 @@ class P02_EmptyDirectoriesAndGitignore(unittest.TestCase):
         self.assertEqual(bad, [], bad)
         secret_like = _git(["log", "-p", "--all", "-G", "(ghp_|gho_|AKIA[0-9A-Z]{16}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|/rest/[0-9]+/[A-Za-z0-9]{10,}/)", "--", ".", ":(exclude).claude/policy/data_classification.json", ":(exclude).claude/policy/sensitive_scan.py", ":(exclude).claude/tests"], ROOT).stdout
         self.assertNotIn("BEGIN RSA PRIVATE KEY", secret_like); self.assertEqual(secret_like.count("ghp_" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0)
+    @covers("data_sensitivity_awareness", kinds=("unit", "adversarial"))
+    def test_journal_does_not_retain_credential_value_after_redaction(self):
+        text = (ROOT / W("Journal.md")).read_text(encoding="utf-8")
+        self.assertIsNone(re.search(r"(?i)\btoken\s+[A-Za-z0-9_-]{8,}", text))
 
 class P03_DurableState(unittest.TestCase):
     @covers("commitment_tracking", "decision_logging", "commitment_memory", "decision_memory", "audit_logging", *GOV, kinds=("unit", "completion", "failure_injection"))
