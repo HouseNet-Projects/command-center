@@ -100,5 +100,45 @@ class DeputyRuntime:
         if not self.vault: raise RuntimeBlocked("VAULT_UNAVAILABLE")
         return self.vault.vault_reference(reference_id)
 
+    def strategy_assessment(self, strategy, *, evidence=None, kpis=None, capacity=None):
+        """Produce a non-mutating Strategy/PMO assessment; execution remains approval-bound."""
+        evidence = list(evidence or []); kpis = list(kpis or [])
+        gaps = []
+        if not kpis: gaps.append("MISSING_KPI")
+        if not evidence: gaps.append("MISSING_CURRENT_STATE_EVIDENCE")
+        if capacity is not None and capacity.get("required", 0) > capacity.get("available", 0):
+            gaps.append("CAPACITY_CONTRADICTION")
+        return {"status":"ANALYSIS", "lifecycle":"DIAGNOSIS", "strategy":strategy,
+                "gaps":gaps, "recommendation_required":bool(gaps),
+                "authority":"NON_MUTATING_ANALYSIS", "owner_decision_required":bool(gaps)}
+
+    def reconcile_inbound(self, event, *, existing_ids=None):
+        """Normalize untrusted inbound evidence without granting authority or creating tasks."""
+        if not event.get("provenance") or event.get("trusted_authority"):
+            raise RuntimeBlocked("UNTRUSTED_INPUT_BOUNDARY")
+        eid = event.get("source_id") or _stable(event.get("channel"), event.get("text"))
+        duplicate = eid in set(existing_ids or [])
+        classes = list(event.get("classes") or ["NO_ACTION"])
+        return {"event_id":eid, "duplicate":duplicate, "classes":classes,
+                "status":"PROPOSAL_ONLY", "authority_granted":False,
+                "canonical_knowledge":False, "approval_required":any(c in classes for c in ("ACTION","DECISION_REQUIRED"))}
+
+    def compose_output(self, output_type, *, template=None, provenance=None):
+        """Resolve output readiness without becoming a second Design System."""
+        if not provenance: raise RuntimeBlocked("MISSING_PROVENANCE")
+        if not template: return {"status":"TEMPLATE_GAP", "output_type":output_type, "provenance":provenance}
+        return {"status":"STRUCTURALLY_VALIDATED", "output_type":output_type,
+                "template":template, "visual_certification":"REQUIRED", "provenance":provenance}
+
+    def follow_through(self, nodes):
+        """Return management exceptions from the same persisted work graph."""
+        rows=[]
+        for n in nodes:
+            if n.get("status") in ("BLOCKED",) or n.get("status") not in ("VERIFIED", "COMPLETED"):
+                rows.append({"id":n.get("id"), "status":n.get("status"), "owner":n.get("owner"),
+                             "next_action":n.get("next_action"), "exception":n.get("status")})
+        return {"status":"READY", "exceptions":rows, "views":["DAILY","WEEKLY","MONTHLY"],
+                "authority":"COMMAND_CENTER_OPERATIONAL_STATE"}
+
     def prepare_material_action(self, action):
         return {"status":"APPROVAL_REQUIRED", "action":action, "authority":"ACTION_RUNTIME", "approved":False}
