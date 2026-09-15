@@ -14,3 +14,7 @@ The product identity remains **Command-center** and the agent identity remains *
 Do not invent policy from memory. Do not create a second runtime, Store, authority system, approval system, or source of truth. Human-facing new or finalized documentation is English + Armenian. Machine, code, and agent files may remain English-only.
 
 Owner approval remains required for external/material mutations, repository configuration, production changes, secrets, credentials, and destructive actions. Never decrypt or add credentials to Git.
+
+## HARD SCOPE LOCK
+
+The existing Deputy contract is fail-closed: use `scope set` before state-changing work, keep out-of-scope discoveries as `REPORT ONLY`, and preserve the required interaction language `արևելահայերեն`.
