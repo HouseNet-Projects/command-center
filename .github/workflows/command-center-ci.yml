@@ -13,7 +13,7 @@ concurrency:
 jobs:
   policy-gate:
     name: HouseNet policy gate
-    uses: HouseNet-Projects/house-net-control-plane/.github/workflows/reusable-policy-gate.yml@2bed50afd833aeef9e31af2403e7165f786cc2e7
+    uses: HouseNet-Projects/house-net-control-plane/.github/workflows/reusable-policy-gate.yml@96aa97360e6a3555869e5f7b48c951d48f5988a4
   deputy-tests:
     name: Deputy tests and evaluations
     runs-on: ubuntu-24.04
