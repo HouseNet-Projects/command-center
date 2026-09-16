@@ -150,6 +150,56 @@ class DeputyRuntime:
         if not self.knowledge: raise RuntimeBlocked("KNOWLEDGE_UNAVAILABLE")
         return self.knowledge.search(query)
 
+    def synthesize_from_estate(self, control_plane_root, knowledge_root, query, *, vault_root=None, vault_reference_id=None):
+        """Consume canonical Knowledge/Vault repositories through governed estate declarations."""
+        knowledge_cap = self.discover_from_control_plane(control_plane_root, "knowledge.search")
+        catalog_path = Path(knowledge_root) / knowledge_cap.get("path", "knowledge/index/catalog.json")
+        if not catalog_path.is_file():
+            raise RuntimeBlocked("KNOWLEDGE_CATALOG_UNAVAILABLE")
+        try:
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise RuntimeBlocked("KNOWLEDGE_CATALOG_INVALID") from exc
+        items = []
+        needle = str(query).lower()
+        for entry in catalog.get("items", []):
+            if str(entry.get("status", "")).lower() != "canonical":
+                continue
+            item_path = Path(knowledge_root) / str(entry.get("path", ""))
+            try:
+                item = json.loads(item_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                raise RuntimeBlocked("KNOWLEDGE_ITEM_INVALID") from exc
+            if str(item.get("status", "")).lower() != "canonical":
+                continue
+            if not item.get("source") or not item.get("source", {}).get("hash"):
+                raise RuntimeBlocked("KNOWLEDGE_PROVENANCE_MISSING")
+            if item.get("freshness", {}).get("state") not in ("current", "verified"):
+                continue
+            haystack = " ".join(str(item.get(k, "")) for k in ("id", "title", "domain")).lower()
+            if needle and needle not in haystack and len(items) > 0:
+                continue
+            items.append(item)
+        if not items:
+            raise RuntimeBlocked("KNOWLEDGE_NO_CANONICAL_EVIDENCE")
+        vault = None
+        if vault_reference_id is not None:
+            if vault_root is None:
+                raise RuntimeBlocked("VAULT_UNAVAILABLE")
+            vault_cap = self.discover_from_control_plane(control_plane_root, "vault.reference")
+            index_path = Path(vault_root) / vault_cap.get("path", "vault/index.json")
+            try:
+                index = json.loads(index_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                raise RuntimeBlocked("VAULT_INDEX_INVALID") from exc
+            ref_path = Path(vault_root) / "vault" / "references" / (str(vault_reference_id).replace("/", "") + ".json")
+            if not any(r.get("id") == vault_reference_id for r in index.get("references", [])) or not ref_path.is_file():
+                raise RuntimeBlocked("VAULT_REFERENCE_UNAVAILABLE")
+            data = json.loads(ref_path.read_text(encoding="utf-8"))
+            vault = {k: data.get(k) for k in ("id", "purpose", "owner_principal", "target_system", "sensitivity", "required_for_bootstrap", "last_verified")}
+        evidence = [{"id": x.get("id"), "source": x.get("source"), "freshness": x.get("freshness"), "owner": x.get("owner"), "status": x.get("status"), "sensitivity": x.get("sensitivity")} for x in items]
+        return {"identity": self.identity, "query": query, "evidence": evidence, "vault_reference": vault, "authority": "KNOWLEDGE_NOT_POLICY"}
+
     def vault_context(self, reference_id):
         if not self.vault: raise RuntimeBlocked("VAULT_UNAVAILABLE")
         return self.vault.vault_reference(reference_id)

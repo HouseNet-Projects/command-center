@@ -40,6 +40,21 @@ class RuntimeIntegrationTests(unittest.TestCase):
         self.assertEqual(DeputyRuntime.discover_from_control_plane(root,'knowledge.search')['repository'],'HouseNet-Projects/x')
         with self.assertRaises(RuntimeBlocked): DeputyRuntime.discover_from_control_plane(root,'vault.read')
 
+    def test_estate_backed_knowledge_and_vault_synthesis(self):
+        import json, tempfile
+        root=Path(tempfile.mkdtemp()); (root/'registry').mkdir()
+        (root/'registry'/'repositories.json').write_text(json.dumps({'repositories':[
+            {'repository':'HouseNet-Projects/house-net-knowledge','capabilities':[{'capability_id':'knowledge.search','path':'knowledge/index/catalog.json','certification':'certified','health':'healthy'}]},
+            {'repository':'HouseNet-Projects/house-net-vault','capabilities':[{'capability_id':'vault.reference','path':'vault/index.json','certification':'certified','health':'healthy'}]}]}))
+        knowledge=root/'knowledge'; (knowledge/'knowledge/index').mkdir(parents=True); (knowledge/'knowledge/canonical').mkdir(parents=True)
+        (knowledge/'knowledge/index/catalog.json').write_text(json.dumps({'items':[{'id':'K1','status':'canonical','path':'knowledge/canonical/K1.json'}]}))
+        (knowledge/'knowledge/canonical/K1.json').write_text(json.dumps({'id':'K1','title':'Sales process','domain':'sales','status':'canonical','owner':'HOUSE_NET_OWNER','source':{'hash':'a'*64},'freshness':{'state':'current'},'sensitivity':'INTERNAL'}))
+        vault=root/'vault'; (vault/'vault').mkdir(parents=True); (vault/'vault/references').mkdir(parents=True); (vault/'vault/index.json').write_text(json.dumps({'references':[{'id':'V1'}]})); (vault/'vault/references/V1.json').write_text(json.dumps({'id':'V1','purpose':'synthetic','owner_principal':'HOUSE_NET_OWNER','target_system':'test','sensitivity':'RESTRICTED','required_for_bootstrap':False,'last_verified':'2026-09-16'}))
+        out=self.runtime().synthesize_from_estate(root,knowledge,'sales',vault_root=vault,vault_reference_id='V1')
+        self.assertEqual(out['evidence'][0]['id'],'K1'); self.assertEqual(out['vault_reference']['id'],'V1'); self.assertNotIn('storage',out['vault_reference'])
+        (knowledge/'knowledge/canonical/K1.json').write_text(json.dumps({'id':'K1','status':'intake','source':{'hash':'a'*64},'freshness':{'state':'current'}}))
+        with self.assertRaises(RuntimeBlocked): self.runtime().synthesize_from_estate(root,knowledge,'sales')
+
     def test_canonical_engine_entry_uses_resolver_and_audit(self):
         import tempfile as tf
         import engine, store
