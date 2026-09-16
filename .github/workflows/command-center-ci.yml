@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: HouseNet-Projects/house-net-control-plane
-          ref: b36ad10cc02a80d98ad22d04577ebcd512740ce0
+          ref: cfde3fb2533f03bb36364bb0db784e53016e4e4e
           path: control-plane-authority
           persist-credentials: false
       - name: Install locked Deputy runtime
