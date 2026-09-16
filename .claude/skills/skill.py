@@ -73,6 +73,10 @@ def main(argv):
     if cmd == "plan":
         tid = _ticket_id(rest); intent = rest[0]; inputs = json.loads(rest[1]) if len(rest) > 1 else {}
         lvl, tok = _levels(inputs)
+        # Every user plan now traverses the canonical Deputy request entry; an existing ticket is reused only for context.
+        if not tid:
+            r = engine.run_deputy_request(reg, intent, inputs, action_level=lvl, approval_token=tok, session_id=engine.cli_session_id())
+            print(_j(r)); return 0 if r["status"] in ("OK", "PARTIAL") else 2
         plan = engine.resolve(reg, intent)
         if tid:
             t = engine.get_ticket(tid)

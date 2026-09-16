@@ -423,6 +423,36 @@ def read_audit(limit=50):
 def audit_for_execution(execution_id):
     return _store().list("audit", where="execution_id=?", args=(execution_id,))
 
+# ───────────────────────── canonical Deputy request entry ─────────────────────────
+def run_deputy_request(reg, intent, inputs=None, *, action_level="ANALYZE", approval_token=None, session_id="", source="DeputyRuntime"):
+    """Canonical Deputy production entry: ticket → brain evidence → Skill Engine resolution → execution/audit.
+
+    Professional Brains only provide auditable reasoning context. The existing resolver, gate,
+    executors, Action Runtime and Store remain authoritative for executable behavior.
+    """
+    inputs = dict(inputs or {})
+    ticket = open_ticket(reg, intent, session_id=session_id, source=source, inputs=inputs)
+    try:
+        arch = pathlib.Path(ROOT) / ".claude" / "architecture"
+        import sys as _sys
+        if str(arch) not in _sys.path: _sys.path.insert(0, str(arch))
+        from brain_router import route as _route
+        brain_evidence = _route(intent)
+    except Exception as exc:
+        return {"status":"BLOCKED", "blocked":[{"code":"BRAIN_ROUTER_UNAVAILABLE", "reason":str(exc)}], "ticket_id":ticket["ticket_id"]}
+    plan = resolve(reg, intent)
+    if plan.get("status") != "RESOLVED":
+        return {"status":"BLOCKED", "ticket_id":ticket["ticket_id"], "brains":brain_evidence,
+                "plan":plan, "blocked":[{"code":"NO_APPLICABLE_SKILL", "reason":plan.get("reasons")}]}
+    inputs["_brain_context"] = {"identity":"DEPUTY", "selected_brains":brain_evidence["selected_brains"],
+                                  "synthesis_required":brain_evidence["synthesis_required"]}
+    result = run_plan(reg, plan, inputs, action_level=action_level, approval_token=approval_token,
+                      ticket_id=ticket["ticket_id"])
+    result["brains"] = brain_evidence
+    result["resolved_skills"] = plan.get("chain", [])
+    result["ticket_id"] = ticket["ticket_id"]
+    return result
+
 # ───────────────────────── execution ─────────────────────────
 def run_skill(reg, skill_id, inputs=None, *, intent="", action_level="ANALYZE", approval_token=None,
               execution_id=None, selection_reason="direct", ticket_id=None):

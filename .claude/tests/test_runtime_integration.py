@@ -23,6 +23,22 @@ class RuntimeIntegrationTests(unittest.TestCase):
         with self.assertRaises(RuntimeBlocked): r.complete(node, None)
         self.assertEqual(r.complete(node, {'source':'test'})['status'], 'VERIFIED')
 
+    def test_canonical_engine_entry_uses_resolver_and_audit(self):
+        import tempfile as tf
+        import engine, store
+        old = engine.STATE_DIR
+        engine.STATE_DIR = Path(tf.mkdtemp()); store.reset()
+        try:
+            reg = engine.load_registry()
+            out = engine.run_deputy_request(reg, 'Why has churn increased?', session_id='test')
+            self.assertIn('brains', out); self.assertIn('resolved_skills', out)
+            self.assertTrue(out['ticket_id'])
+            self.assertTrue(out['resolved_skills'])
+            self.assertIn(out['status'], ('OK','PARTIAL','BLOCKED'))
+            self.assertTrue(engine.get_ticket(out['ticket_id']))
+        finally:
+            engine.STATE_DIR = old; store.reset()
+
     def test_strategy_inbound_output_followthrough_fail_closed(self):
         r=self.runtime()
         self.assertIn("MISSING_KPI", r.strategy_assessment("sales plan")["gaps"])
