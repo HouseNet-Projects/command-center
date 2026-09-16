@@ -46,6 +46,8 @@ def run_all(registry=None, *, control_plane=None):
                 out["G_recovery"]={"status":"PASS","evidence":{"capabilities":{"knowledge":knowledge_cap,"vault":vault_cap},"store":runtime.store.check()}}
             else: raise RuntimeBlocked("CONTROL_PLANE_REQUIRED")
         except RuntimeBlocked as exc:
+            if "F_executive_report" not in out:
+                out["F_executive_report"]={"status":"BLOCKED","reason":"TEMPLATE_GAP: CONTROL_PLANE_REQUIRED","evidence":runtime.compose_output("monthly_owner_report", provenance={"source":"synthetic"})}
             out["G_recovery"]={"status":"BLOCKED","reason":str(exc),"evidence":{"store":runtime.store.check()}}
         return {"schema":"housenet.deputy.e2e.v1", "scenarios":out,
                 "external_writes":False, "summary":{"pass":sum(v["status"]=="PASS" for v in out.values()), "blocked":sum(v["status"]=="BLOCKED" for v in out.values())}}
