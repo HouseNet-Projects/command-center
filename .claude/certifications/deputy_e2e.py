@@ -24,7 +24,8 @@ def run_all(registry=None, *, control_plane=None):
         for key, request in (("A_sales_program", "Create a three-month Sales action plan, prepare the tasks and follow implementation."),
                              ("E_cross_functional_churn", "Why is churn increasing?")):
             result = engine.run_deputy_request(reg, request, session_id="e2e")
-            out[key] = {"status": "PASS" if result.get("brains") and result.get("resolved_skills") else "BLOCKED", "evidence": result}
+            runnable = result.get("status") not in ("BLOCKED", "FAIL", "ERROR") and bool(result.get("brains")) and bool(result.get("resolved_skills"))
+            out[key] = {"status": "PASS" if runnable else "BLOCKED", "evidence": result}
         runtime = DeputyRuntime(state_dir=tempfile.mkdtemp())
         inbound = {"channel":"email","source_id":"mail-1","text":"Please send proposal by Friday","provenance":{"thread":"mail-1"}}
         c = runtime.reconcile_inbound(inbound)
