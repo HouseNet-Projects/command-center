@@ -192,8 +192,16 @@ class DeputyRuntime:
                 index = json.loads(index_path.read_text(encoding="utf-8"))
             except (OSError, ValueError) as exc:
                 raise RuntimeBlocked("VAULT_INDEX_INVALID") from exc
-            ref_path = Path(vault_root) / "vault" / "references" / (str(vault_reference_id).replace("/", "") + ".json")
-            if not any(r.get("id") == vault_reference_id for r in index.get("references", [])) or not ref_path.is_file():
+            ref_path = None
+            if any(r.get("id") == vault_reference_id for r in index.get("references", [])):
+                for candidate in (Path(vault_root) / "vault" / "references").glob("*.json"):
+                    try:
+                        if json.loads(candidate.read_text(encoding="utf-8")).get("id") == vault_reference_id:
+                            ref_path = candidate
+                            break
+                    except (OSError, ValueError):
+                        continue
+            if ref_path is None:
                 raise RuntimeBlocked("VAULT_REFERENCE_UNAVAILABLE")
             data = json.loads(ref_path.read_text(encoding="utf-8"))
             vault = {k: data.get(k) for k in ("id", "purpose", "owner_principal", "target_system", "sensitivity", "required_for_bootstrap", "last_verified")}
