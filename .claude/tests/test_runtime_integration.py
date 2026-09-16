@@ -23,6 +23,23 @@ class RuntimeIntegrationTests(unittest.TestCase):
         with self.assertRaises(RuntimeBlocked): r.complete(node, None)
         self.assertEqual(r.complete(node, {'source':'test'})['status'], 'VERIFIED')
 
+    def test_full_work_graph_and_lifecycle(self):
+        r=self.runtime(); g=r.persist_work_graph('Sales program', brains=['BRAIN-SALES'], source={'id':'src'})
+        self.assertEqual(len(g['nodes']), 9); self.assertEqual(g['nodes'][0]['type'], 'GOAL'); self.assertEqual(g['nodes'][-1]['type'], 'VERIFIED_COMPLETION')
+        with self.assertRaises(RuntimeBlocked): r.transition_work(g['nodes'][5], 'TASK_CREATED')
+        n=r.transition_work(g['nodes'][5], 'TASK_CREATED', approval=True)
+        self.assertEqual(n['lifecycle'], 'TASK_CREATED')
+        with self.assertRaises(RuntimeBlocked): r.transition_work(n, 'TASK_COMPLETED')
+        self.assertEqual(r.transition_work(n, 'RESULT_VERIFIED', evidence={'readback':'ok'})['lifecycle'], 'RESULT_VERIFIED')
+        self.assertIsNotNone(r.store.get('commitments', g['nodes'][3]['id']))
+
+    def test_control_plane_capability_is_registry_backed(self):
+        import json, tempfile
+        root=Path(tempfile.mkdtemp()); (root/'registry').mkdir()
+        (root/'registry'/'repositories.json').write_text(json.dumps({'repositories':[{'repository':'HouseNet-Projects/x','owner':'HouseNet-Projects','capabilities':[{'capability_id':'knowledge.search','certification':'certified','health':'healthy'}]}]}))
+        self.assertEqual(DeputyRuntime.discover_from_control_plane(root,'knowledge.search')['repository'],'HouseNet-Projects/x')
+        with self.assertRaises(RuntimeBlocked): DeputyRuntime.discover_from_control_plane(root,'vault.read')
+
     def test_canonical_engine_entry_uses_resolver_and_audit(self):
         import tempfile as tf
         import engine, store

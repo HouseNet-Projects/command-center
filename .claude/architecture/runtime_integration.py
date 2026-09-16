@@ -5,7 +5,7 @@ and Store without introducing a second runtime, memory, authority, or task datab
 It is deliberately provider-neutral and fail-closed.
 """
 from __future__ import annotations
-import hashlib, json, sys
+import hashlib, json, sys, datetime
 from pathlib import Path
 try:
     from .brain_router import route
@@ -22,27 +22,33 @@ if str(SKILLS) not in sys.path:
 class RuntimeBlocked(RuntimeError):
     pass
 
+_OWNER_BY_PRIMITIVE = {
+    "policy": "CONTROL_PLANE", "repository": "CONTROL_PLANE", "brand": "DESIGN_SYSTEM",
+    "template": "DESIGN_SYSTEM", "knowledge": "KNOWLEDGE", "task": "COMMAND_CENTER",
+    "state": "COMMAND_CENTER", "vault": "VAULT", "external": "EXTERNAL_SYSTEM",
+    "message": "INBOUND_EVIDENCE", "report": "GENERATED_OUTPUT", "history": "HISTORY",
+}
+_STATUS_ORDER = ("PLAN_PREPARED", "TASK_PREPARED", "TASK_AUTHORIZED", "TASK_CREATED",
+                 "TASK_IN_PROGRESS", "TASK_BLOCKED", "TASK_COMPLETED", "RESULT_VERIFIED")
+
 
 def _stable(*parts):
     return hashlib.sha256("|".join(str(x) for x in parts).encode()).hexdigest()[:16]
 
 
-def resolve_truth(sources):
-    """Resolve a primitive without silently averaging contradictory authority."""
-    rows = list(sources or [])
-    if not rows:
-        raise RuntimeBlocked("NO_SOURCE")
+def resolve_truth(sources, *, primitive=None):
+    """Resolve by canonical ownership and currentness; never latest-file-wins."""
+    rows=list(sources or [])
+    if not rows: raise RuntimeBlocked("NO_SOURCE")
+    expected=_OWNER_BY_PRIMITIVE.get(str(primitive or "").lower()) if primitive else None
     for row in rows:
-        if not row.get("provenance"):
-            raise RuntimeBlocked("MISSING_PROVENANCE")
-    live = [r for r in rows if r.get("authority") == "current" and r.get("freshness") != "stale"]
-    if not live:
-        raise RuntimeBlocked("NO_CURRENT_AUTHORITY")
-    values = {json.dumps(r.get("value"), sort_keys=True, default=str) for r in live}
-    if len(values) > 1:
-        raise RuntimeBlocked("CONFLICTING_AUTHORITATIVE_SOURCES")
-    return {"value": live[0].get("value"), "authority": live[0].get("owner"),
-            "provenance": [r["provenance"] for r in live], "status": "RESOLVED"}
+        if not row.get("provenance"): raise RuntimeBlocked("MISSING_PROVENANCE")
+        if expected and row.get("owner") != expected: raise RuntimeBlocked("WRONG_CANONICAL_OWNER")
+    live=[r for r in rows if r.get("authority") == "current" and r.get("freshness") not in ("stale","unverified") and not r.get("superseded") and r.get("certification", "certified") != "revoked"]
+    if not live: raise RuntimeBlocked("NO_CURRENT_AUTHORITY")
+    values={json.dumps(r.get("value"),sort_keys=True,default=str) for r in live}
+    if len(values)>1: raise RuntimeBlocked("CONFLICTING_AUTHORITATIVE_SOURCES")
+    return {"value":live[0].get("value"),"authority":live[0].get("owner"),"provenance":[r["provenance"] for r in live],"status":"RESOLVED"}
 
 
 class DeputyRuntime:
@@ -65,6 +71,47 @@ class DeputyRuntime:
         if not row or row.get("certification") != "certified" or row.get("registered") is not True:
             raise RuntimeBlocked("CAPABILITY_UNAVAILABLE")
         return dict(row)
+
+    @staticmethod
+    def discover_from_control_plane(control_plane_root, capability_id):
+        """Read the canonical Control Plane repository registry; undeclared or uncertified is unavailable."""
+        p = Path(control_plane_root) / "registry" / "repositories.json"
+        try: data = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc: raise RuntimeBlocked("CONTROL_PLANE_UNAVAILABLE") from exc
+        rows=[]
+        for repo in data.get("repositories", []):
+            for cap in repo.get("capabilities", []):
+                if cap.get("capability_id") == capability_id:
+                    row=dict(cap); row.setdefault("repository", repo.get("repository")); row.setdefault("owner", repo.get("owner")); rows.append(row)
+        if len(rows) != 1 or rows[0].get("certification") != "certified" or rows[0].get("health") != "healthy":
+            raise RuntimeBlocked("CAPABILITY_UNAVAILABLE")
+        return rows[0]
+
+    def persist_work_graph(self, request, *, owner="GEV", brains=None, source=None, due=None):
+        """Persist the complete approved hierarchy through the existing Store."""
+        types=("GOAL","STRATEGY","ROADMAP","INITIATIVE","ACTION_PLAN","TASK","CHECKPOINT","EVIDENCE","VERIFIED_COMPLETION")
+        nodes=[]; parent=None
+        for kind in types:
+            title = request if kind == "GOAL" else f"{kind}: {request}"
+            status = "PROPOSED" if kind != "ACTION_PLAN" else "PLANNED"
+            node=create_node(kind,title,owner=owner,status=status,parent_id=parent,source=source,brains=brains,approval="PENDING" if kind in ("TASK","ACTION_PLAN") else "NOT_REQUIRED",evidence=None)
+            node.update({"priority":"NORMAL", "due":due, "dependencies":[], "next_action":"review", "review_cadence":"WEEKLY"})
+            nodes.append(node); parent=node["id"]
+        # validate graph before writing; record each node in canonical commitments table
+        errors=validate_graph(nodes)
+        if errors: raise RuntimeBlocked("INVALID_WORK_GRAPH:"+";".join(errors))
+        saved=[]
+        for n in nodes:
+            saved.append(self.store.record("commitments", n["id"], {"kind":"WORK_GRAPH_NODE", **n}))
+        return {"nodes":nodes,"statuses":list(_STATUS_ORDER),"records":saved,"root":nodes[0]["id"]}
+
+    def transition_work(self, node, target, *, evidence=None, approval=False):
+        if target not in _STATUS_ORDER: raise RuntimeBlocked("INVALID_WORK_STATUS")
+        n=dict(node); current=n.get("lifecycle", "PLAN_PREPARED")
+        if target in ("TASK_AUTHORIZED","TASK_CREATED") and not approval: raise RuntimeBlocked("APPROVAL_REQUIRED")
+        if target in ("TASK_COMPLETED","RESULT_VERIFIED") and not evidence: raise RuntimeBlocked("COMPLETION_EVIDENCE_REQUIRED")
+        n["lifecycle"]=target; n["evidence"]=evidence
+        return n
 
     def plan(self, request, *, owner="GEV", source=None, events=None):
         routing = route(request)
@@ -91,6 +138,13 @@ class DeputyRuntime:
         errors = validate_graph([updated])
         if errors: raise RuntimeBlocked("COMPLETION_EVIDENCE_REQUIRED")
         return updated
+
+    def synthesize(self, query, *, knowledge=None, vault_reference=None):
+        if knowledge is None: raise RuntimeBlocked("KNOWLEDGE_UNAVAILABLE")
+        items = knowledge.search(query)
+        if not items: raise RuntimeBlocked("KNOWLEDGE_NO_CANONICAL_EVIDENCE")
+        evidence=[{"id":x.get("id"),"source":x.get("source"),"status":x.get("status"),"freshness":x.get("freshness"),"owner":x.get("owner"),"sensitivity":x.get("sensitivity")} for x in items]
+        return {"identity":"DEPUTY","query":query,"evidence":evidence,"vault_reference":vault_reference,"authority":"KNOWLEDGE_NOT_POLICY"}
 
     def knowledge_context(self, query):
         if not self.knowledge: raise RuntimeBlocked("KNOWLEDGE_UNAVAILABLE")
